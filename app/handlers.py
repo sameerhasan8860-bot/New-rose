@@ -17,6 +17,7 @@ from app.db.repositories import GroupRepository
 from app.services.authorization import has_group_admin_rights
 
 router = Router(name="core")
+_JOIN_WINDOWS = defaultdict(deque)
 _FLOOD_WINDOWS = defaultdict(deque)
 BRAND = "✦ 𝗠𝗔𝗦𝗧𝗘𝗥 𝗫 ✦"
 GROUP_TYPES = (ChatType.GROUP, ChatType.SUPERGROUP)
@@ -556,6 +557,25 @@ async def greet_new_member(event: ChatMemberUpdated, bot: Bot, database: Databas
         return
     repo = GroupRepository()
     async with database.sessions() as session:
+        antiraid_enabled = await repo.get_setting(session, event.chat.id, "antiraid_enabled", False)
+    if antiraid_enabled:
+        now = time.monotonic()
+        joins = _JOIN_WINDOWS[event.chat.id]
+        while joins and now - joins[0] > 30:
+            joins.popleft()
+        joins.append(now)
+        if len(joins) == 5:
+            try:
+                admins = await bot.get_chat_administrators(event.chat.id)
+                for admin in admins:
+                    if not admin.user.is_bot:
+                        try:
+                            await bot.send_message(admin.user.id, "Anti-raid alert: 5 new members joined within 30 seconds. Review recent joins; no automatic bans or mass actions were taken.")
+                        except (TelegramBadRequest, TelegramForbiddenError):
+                            pass
+            except (TelegramBadRequest, TelegramForbiddenError):
+                pass
+    async with database.sessions() as session:
         captcha_enabled = await repo.get_setting(session, event.chat.id, "captcha_enabled", False)
         enabled = await repo.get_setting(session, event.chat.id, "welcome_enabled", False)
         template = await repo.get_setting(session, event.chat.id, "welcome_template", "Welcome {mention}!")
@@ -870,3 +890,20 @@ async def captcha_toggle(message: Message, bot: Bot, database: Database):
         async with session.begin():
             await repo.set_setting(session, message.chat.id, "captcha_enabled", value == "on")
     await message.answer(f"🧩 CAPTCHA turned {value}.")
+
+
+
+@router.message(Command("antiraid"))
+async def antiraid_toggle(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("Only group administrators can configure antiraid.")
+        return
+    value = _args(message).lower()
+    if value not in {"on", "off"}:
+        await message.answer("Usage: /antiraid on OR /antiraid off. Alerts admins after 5 joins in 30 seconds; no automatic bans.")
+        return
+    repo = GroupRepository()
+    async with database.sessions() as session:
+        async with session.begin():
+            await repo.set_setting(session, message.chat.id, "antiraid_enabled", value == "on")
+    await message.answer("Anti-raid alerts turned " + value + ".")
