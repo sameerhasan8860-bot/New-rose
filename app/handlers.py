@@ -7,11 +7,11 @@ from aiogram import Bot, F, Router
 from aiogram.enums import ChatMemberStatus, ChatType
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.filters import Command
-from aiogram.types import ChatMemberUpdated, ChatPermissions, Message, User
+from aiogram.types import CallbackQuery, ChatMemberUpdated, ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, Message, User
 from sqlalchemy import func, select
 
 from app.db.engine import Database
-from app.db.models import BlockedTerm, Group, GroupFilter, GroupSetting, ModerationAction, Note, ReportRecord, WarningRecord
+from app.db.models import BlockedTerm, CaptchaChallenge, Group, GroupFilter, GroupSetting, ModerationAction, Note, ReportRecord, WarningRecord
 from app.db.repositories import GroupRepository
 from app.services.authorization import has_group_admin_rights
 
@@ -555,14 +555,73 @@ async def greet_new_member(event: ChatMemberUpdated, bot: Bot, database: Databas
         return
     repo = GroupRepository()
     async with database.sessions() as session:
+        captcha_enabled = await repo.get_setting(session, event.chat.id, "captcha_enabled", False)
         enabled = await repo.get_setting(session, event.chat.id, "welcome_enabled", False)
         template = await repo.get_setting(session, event.chat.id, "welcome_template", "Welcome {mention}!")
+    if captcha_enabled:
+        try:
+            member = await bot.get_chat_member(event.chat.id, user.id)
+            if member.status not in (ChatMemberStatus.CREATOR, ChatMemberStatus.ADMINISTRATOR):
+                chat = await bot.get_chat(event.chat.id)
+                if chat.permissions is not None:
+                    a, b = random.randint(1, 9), random.randint(1, 9)
+                    answer = a + b
+                    async with database.sessions() as session:
+                        async with session.begin():
+                            session.add(CaptchaChallenge(chat_id=event.chat.id, user_id=user.id, answer=answer, expires_at=datetime.now(timezone.utc) + timedelta(minutes=5)))
+                    await bot.restrict_chat_member(event.chat.id, user.id, permissions=ChatPermissions(can_send_messages=False))
+                    buttons = [[InlineKeyboardButton(text=str(value), callback_data=f"mxcap:{event.chat.id}:{user.id}:{value}") for value in (answer, answer + 1, max(0, answer - 1))]]
+                    await bot.send_message(event.chat.id, f"🧩 {user.full_name}, solve this to unlock chatting: {a} + {b} = ?", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+        except (TelegramBadRequest, TelegramForbiddenError):
+            pass
     if not enabled:
         return
     import html
     mention = f'<a href="tg://user?id={user.id}">{html.escape(user.full_name)}</a>'
     rendered = str(template).replace("{first}", html.escape(user.first_name)).replace("{name}", html.escape(user.full_name)).replace("{id}", str(user.id)).replace("{mention}", mention)
     await bot.send_message(event.chat.id, rendered[:4000])
+
+
+@router.callback_query(F.data.startswith("mxcap:"))
+async def verify_captcha(callback: CallbackQuery, bot: Bot, database: Database):
+    try:
+        _, raw_chat, raw_user, raw_answer = (callback.data or "").split(":")
+        chat_id, user_id, selected = int(raw_chat), int(raw_user), int(raw_answer)
+    except (ValueError, AttributeError):
+        await callback.answer("Invalid challenge.", show_alert=True)
+        return
+    if callback.from_user.id != user_id:
+        await callback.answer("This challenge belongs to another member.", show_alert=True)
+        return
+    async with database.sessions() as session:
+        async with session.begin():
+            challenge = (await session.scalars(select(CaptchaChallenge).where(
+                CaptchaChallenge.chat_id == chat_id,
+                CaptchaChallenge.user_id == user_id,
+                CaptchaChallenge.status == "pending",
+            ).order_by(CaptchaChallenge.created_at.desc()).limit(1))).first()
+            if challenge is None or challenge.expires_at < datetime.now(timezone.utc):
+                if challenge is not None:
+                    challenge.status = "expired"
+                valid = False
+            else:
+                valid = challenge.answer == selected
+                if valid:
+                    challenge.status = "passed"
+    if not valid:
+        await callback.answer("Incorrect or expired. Ask an admin to issue a new challenge.", show_alert=True)
+        return
+    try:
+        chat = await bot.get_chat(chat_id)
+        if chat.permissions is None:
+            await callback.answer("Group defaults unavailable; ask an admin.", show_alert=True)
+            return
+        await bot.restrict_chat_member(chat_id, user_id, permissions=chat.permissions)
+        await callback.message.edit_text("✅ CAPTCHA passed. You can now chat.")
+    except (TelegramBadRequest, TelegramForbiddenError):
+        await callback.answer("Could not restore group permissions. Please contact an admin.", show_alert=True)
+        return
+    await callback.answer("Verified!")
 
 
 @router.message(Command("purge"))
@@ -793,3 +852,20 @@ async def reset_warnings(message: Message, bot: Bot, database: Database):
             removed = result.rowcount or 0
             session.add(ModerationAction(chat_id=message.chat.id, actor_id=actor.id, target_id=target.id, action="resetwarnings", reason=""))
     await message.answer(f"🧹 Removed {removed} warning(s) for {target.full_name} in this group.")
+
+
+
+@router.message(Command("captcha"))
+async def captcha_toggle(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can configure CAPTCHA.")
+        return
+    value = _args(message).lower()
+    if value not in {"on", "off"}:
+        await message.answer("Usage: /captcha on OR /captcha off. New non-admin members receive a 5-minute arithmetic challenge.")
+        return
+    repo = GroupRepository()
+    async with database.sessions() as session:
+        async with session.begin():
+            await repo.set_setting(session, message.chat.id, "captcha_enabled", value == "on")
+    await message.answer(f"🧩 CAPTCHA turned {value}.")
