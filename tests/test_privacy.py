@@ -22,11 +22,17 @@ def test_privacy_erasure_is_limited_to_requesting_user_and_group():
                 ])
             async with session.begin():
                 result = await erase_user_group_records(session, chat_id=-3001, user_id=7)
-                assert result["warnings"] == 2\n                assert result["reports"] == 1\n                assert result["actions"] == 1\n                assert result["notes"] == result["filters"] == result["blocked_terms"] == result["captcha_challenges"] == 0
+                assert result["warnings"] == 2
+                assert result["reports"] == 1
+                assert result["actions"] == 1
+                assert result["notes"] == 0
+                assert result["filters"] == 0
+                assert result["blocked_terms"] == 0
+                assert result["captcha_challenges"] == 0
             async with session.begin():
                 from sqlalchemy import select
-                assert len((await session.scalars(select(WarningRecord))).all()) == 1
-                remaining = (await session.scalars(select(WarningRecord))).first()
-                assert remaining.chat_id == -3002
+                remaining = (await session.scalars(select(WarningRecord))).all()
+                assert len(remaining) == 1
+                assert remaining[0].chat_id == -3002
         await db.close()
     asyncio.run(scenario())
