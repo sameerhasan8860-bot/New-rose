@@ -94,3 +94,13 @@ class GroupFilter(Base):
     response: Mapped[str] = mapped_column(Text, nullable=False)
     creator_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class BlockedTerm(Base):
+    __tablename__ = "blocked_terms"
+    __table_args__ = (Index("ix_blocked_terms_chat_term", "chat_id", "term", unique=True),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    chat_id: Mapped[int] = mapped_column(ForeignKey("groups.chat_id", ondelete="CASCADE"), nullable=False)
+    term: Mapped[str] = mapped_column(String(100), nullable=False)
+    creator_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
