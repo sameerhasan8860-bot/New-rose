@@ -48,7 +48,7 @@ This catalogue lists handlers that exist in the current repository. Commands are
 | /fed create NAME | Group | Create a federation and explicitly opt this group in | Group admin |
 | /fed join ID | Group | Explicitly opt this group into an existing federation | Group admin |
 | /fed leave | Group | Remove this group from its federation | Group admin |
-| /fed info | Group | Show this group's federation and opted-in member count | Group admin |
+| /fed info | Group | Show this group's federation and opted-in member count | Group admin |\n| /fban USER_ID [reason] | Group | Record federation ban and apply it only to opted-in groups where the bot has Ban Users rights; skips targets who are admins | Group admin + bot Ban Users permission in origin; bot permission checked per destination |\n| /funban USER_ID | Group | Remove federation ban from opted-in groups; retains ledger if any destination is skipped or fails | Group admin + bot Ban Users permission in origin; bot permission checked per destination |
 | /privacy | Group | Explain stored data and group-scoped erasure | Everyone |
 | /privacy delete | Group | Delete records associated with your Telegram account in this group only | Everyone |
 | /clean COUNT | Group | Delete 1–20 recent messages including the command, with explicit delete-right checks | Group admin + bot delete permission |
