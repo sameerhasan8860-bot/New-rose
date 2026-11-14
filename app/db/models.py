@@ -124,3 +124,33 @@ class UpdateClaim(Base):
     update_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     owner_token: Mapped[str] = mapped_column(String(64), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class Federation(Base):
+    __tablename__ = "federations"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    owner_chat_id: Mapped[int] = mapped_column(ForeignKey("groups.chat_id", ondelete="CASCADE"), nullable=False)
+    created_by: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class FederationGroup(Base):
+    __tablename__ = "federation_groups"
+    __table_args__ = (Index("ix_federation_groups_chat", "chat_id", unique=True),)
+    federation_id: Mapped[int] = mapped_column(ForeignKey("federations.id", ondelete="CASCADE"), primary_key=True)
+    chat_id: Mapped[int] = mapped_column(ForeignKey("groups.chat_id", ondelete="CASCADE"), primary_key=True)
+    consented_by: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    consented_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class FederationBan(Base):
+    __tablename__ = "federation_bans"
+    __table_args__ = (Index("ix_federation_bans_fed_user", "federation_id", "user_id", unique=True),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    federation_id: Mapped[int] = mapped_column(ForeignKey("federations.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    actor_chat_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    actor_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    reason: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
