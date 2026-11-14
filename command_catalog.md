@@ -22,7 +22,7 @@ This catalogue lists handlers that exist in the current repository. Commands are
 | /reports | Group | Show latest 10 open reports for this group | Group admin |
 | /adminlog | Group | Show latest 10 recorded moderation actions for this group | Group admin |
 | /save NAME | Group | Save a replied-to text message as a group note | Group admin |
-| /get NAME | Group | Retrieve a saved note | Group member |
+| /get NAME | Group | Retrieve a group note | Group member |
 | /notes | Group | List saved notes | Group member |
 | /filter keyword => response | Group | Create/update a keyword-triggered automatic response | Group admin |
 | /stop KEYWORD | Group | Remove a keyword filter | Group admin |
@@ -43,7 +43,9 @@ This catalogue lists handlers that exist in the current repository. Commands are
 | /captcha on/off | Group | Restrict new non-admin members until they pass a persisted 5-minute arithmetic challenge | Group admin |
 | /antiraid on/off | Group | Alert admins after 5 joins in 30 seconds; no automatic bans | Group admin |
 | /topic create NAME / close ID / reopen ID / delete ID | Forum supergroup | Manage forum topics with live user and bot permission checks | Group admin with Manage Topics |
+| /export | Group | Export allowlisted settings for this group as versioned JSON | Group admin |
+| /import | Group | Import a replied-to MASTER X JSON export into this group; strict allowlist and validation | Group admin |
 
-Not yet implemented: federations, connections, topics, privacy, cleaning, formatting, import/export, and bot-to-bot safeguards. Notes, keyword filters, configurable welcome/goodbye messages, category locks, group-scoped blocked terms, and basic in-process text antiflood, opt-in join CAPTCHA, and conservative join-spike alerts are implemented in the current build.
+Not yet implemented: federations, connections, privacy controls, cleaning, formatting helpers, and bot-to-bot safeguards. The export/import feature transfers only supported group settings; it does not copy reports, warnings, notes, filters, or user data.
 
-Authorization is always checked server-side. Report and admin-log queries are scoped by the current chat ID.
+Authorization is checked server-side. Group settings and report/admin-log queries are scoped by the current chat ID.
