@@ -39,7 +39,11 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [x] Opt-in persistent join CAPTCHA with per-group challenges and callback ownership checks
 - [x] Conservative opt-in antiraid join-spike alerts (5 joins / 30 seconds; alert-only, in-process window)
 - [x] Forum topic create/close/reopen/delete with Telegram Manage Topics permission checks
-- [ ] Federations, connections, privacy, cleaning, formatting, import/export, bot-to-bot safeguards
-- [x] PostgreSQL integration and concurrent duplicate-delivery claim/lease tests (atomic SQLite/PostgreSQL upsert claim; final CI verification pending)
-- [x] Failed handlers no longer permanently consume update IDs (post-success persistence; concurrent exactly-once still pending)
+- [x] Group-scoped /export and /import for allowlisted settings with strict schema validation
+- [ ] Federations and cross-group connections
+- [ ] Privacy controls and account-data deletion policy
+- [ ] Cleaning commands and formatting helpers
+- [ ] Bot-to-bot safeguards
+- [x] PostgreSQL integration and concurrent duplicate-delivery claim/lease tests (CI run #138 passed)
+- [x] Failed handlers no longer permanently consume update IDs (post-success persistence; external Telegram side effects are not exactly-once)
 - [ ] Live Telegram test-group verification
