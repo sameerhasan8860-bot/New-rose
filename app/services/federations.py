@@ -97,3 +97,33 @@ async def federation_ban_exists(session, *, federation_id: int, user_id: int) ->
     return await session.scalar(select(FederationBan.id).where(
         FederationBan.federation_id == federation_id, FederationBan.user_id == user_id
     )) is not None
+
+
+async def rename_federation(session, *, federation_id: int, owner_chat_id: int, name: str) -> Federation:
+    clean = name.strip().lower()
+    if not clean or len(clean) > 64:
+        raise ValueError("Federation name must be 1–64 characters.")
+    federation = await session.get(Federation, federation_id)
+    if federation is None:
+        raise ValueError("Federation not found.")
+    if federation.owner_chat_id != owner_chat_id:
+        raise PermissionError("Only the federation's owner group can rename it.")
+    duplicate = await session.scalar(select(Federation).where(
+        Federation.name == clean, Federation.id != federation_id
+    ))
+    if duplicate:
+        raise ValueError("That federation name is already in use.")
+    federation.name = clean
+    await session.flush()
+    return federation
+
+
+async def delete_federation(session, *, federation_id: int, owner_chat_id: int) -> bool:
+    federation = await session.get(Federation, federation_id)
+    if federation is None:
+        return False
+    if federation.owner_chat_id != owner_chat_id:
+        raise PermissionError("Only the federation's owner group can delete it.")
+    await session.delete(federation)
+    await session.flush()
+    return True
