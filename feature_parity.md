@@ -15,7 +15,7 @@ Full command extraction remains IN PROGRESS; do not claim full Rose parity from 
 | Feature family | MASTER X status | Notes |
 |---|---|---|
 | Moderation, reports, notes, filters, greetings, locks, blocklist | IMPLEMENTED; automated coverage partial | See command_catalog.md |
-| CAPTCHA, antiraid alerts, forum topics | IMPLEMENTED; live Telegram verification pending | Antiraid join windows and alert claims are persisted across workers; CAPTCHA stores/restores member permissions when available |
+| CAPTCHA, antiraid alerts, forum topics | IMPLEMENTED; live Telegram verification pending | Antiraid join windows and alert claims are persisted across workers; CAPTCHA stores/restores member permissions when available; CI #192 passed |
 | Import/export | IMPLEMENTED; CI test pending | Versioned JSON; allowlisted group settings only |
 | Federation membership | IMPLEMENTED; tests added | Create/join/leave/info with per-group admin consent; no cross-group enforcement/ban propagation yet |
 | Privacy | IMPLEMENTED; tests added | Self-service erasure of this user's records in the current group only; Telegram messages and other groups unaffected |
