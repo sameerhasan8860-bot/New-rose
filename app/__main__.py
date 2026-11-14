@@ -3,6 +3,11 @@ import logging
 import os
 import sys
 from aiogram import Bot, Dispatcher
+from aiogram.types import (
+    BotCommand,
+    BotCommandScopeDefault,
+    BotCommandScopeAllGroupChats,
+)
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from app.config import Settings
