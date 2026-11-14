@@ -1,15 +1,15 @@
+import os
 from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
-from app.config import Settings
 from app.db.base import Base
 from app.db import models  # noqa: F401 - register model metadata
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
-config.set_main_option("sqlalchemy.url", Settings().database_url.replace("%", "%%"))
+config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./master_x.db").replace("%", "%%"))
 target_metadata = Base.metadata
 
 
