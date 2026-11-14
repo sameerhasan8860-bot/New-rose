@@ -18,6 +18,24 @@ from app.db.repositories import GroupRepository
 from app.services.authorization import has_group_admin_rights
 
 router = Router(name="core")
+
+
+def _allow_human_message(message: Message) -> bool:
+    """Fail closed for bot-authored updates and anonymous sender identities.
+
+    MASTER X intentionally keeps bot-to-bot command execution disabled until an
+    explicit review/approval workflow exists. Anonymous-admin support is also
+    fail-closed here rather than trusting sender_chat as a human identity.
+    """
+    return message.from_user is not None and not message.from_user.is_bot
+
+
+def _allow_human_callback(callback: CallbackQuery) -> bool:
+    return not callback.from_user.is_bot
+
+
+router.message.filter(_allow_human_message)
+router.callback_query.filter(_allow_human_callback)
 _JOIN_WINDOWS = defaultdict(deque)
 _FLOOD_WINDOWS = defaultdict(deque)
 BRAND = "✦ 𝗠𝗔𝗦𝗧𝗘𝗥 𝗫 ✦"
