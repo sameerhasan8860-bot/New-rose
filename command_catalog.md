@@ -45,7 +45,15 @@ This catalogue lists handlers that exist in the current repository. Commands are
 | /topic create NAME / close ID / reopen ID / delete ID | Forum supergroup | Manage forum topics with live user and bot permission checks | Group admin with Manage Topics |
 | /export | Group | Export allowlisted settings for this group as versioned JSON | Group admin |
 | /import | Group | Import a replied-to MASTER X JSON export into this group; strict allowlist and validation | Group admin |
+| /fed create NAME | Group | Create a federation and explicitly opt this group in | Group admin |
+| /fed join ID | Group | Explicitly opt this group into an existing federation | Group admin |
+| /fed leave | Group | Remove this group from its federation | Group admin |
+| /fed info | Group | Show this group's federation and opted-in member count | Group admin |
+| /privacy | Group | Explain stored data and group-scoped erasure | Everyone |
+| /privacy delete | Group | Delete records associated with your Telegram account in this group only | Everyone |
+| /clean COUNT | Group | Delete 1–20 recent messages including the command, with explicit delete-right checks | Group admin + bot delete permission |
+| /format STYLE TEXT | Private/group | Safely render bold, italic, code, or quote using escaped HTML | Everyone |
 
-Not yet implemented: federations, connections, privacy controls, cleaning, formatting helpers, and bot-to-bot safeguards. The export/import feature transfers only supported group settings; it does not copy reports, warnings, notes, filters, or user data.
+Federation membership is implemented with explicit admin opt-in per group; automatic cross-group ban propagation is not implemented. Privacy erasure is scoped to the requesting Telegram user and current group. Cleaning is limited to 20 recent messages. Formatting supports bold, italic, code, and quote with HTML escaping. Bot accounts are rejected as moderation actors/targets and ignored by join protections. The export/import feature transfers only supported group settings; it does not copy reports, warnings, notes, filters, or user data.
 
 Authorization is checked server-side. Group settings and report/admin-log queries are scoped by the current chat ID.
