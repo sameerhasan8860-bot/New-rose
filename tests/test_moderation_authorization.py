@@ -92,3 +92,16 @@ def test_moderation_accepts_admin_and_bot_with_ban_permission(monkeypatch):
         assert target.id == 20
         message.answer.assert_not_awaited()
     asyncio.run(scenario())
+
+
+def test_moderation_rejects_bot_as_actor(monkeypatch):
+    async def scenario():
+        message = _message()
+        message.from_user.is_bot = True
+        bot = SimpleNamespace(get_chat_member=AsyncMock())
+        monkeypatch.setattr(handlers, "has_group_admin_rights", AsyncMock(return_value=True))
+        result = await handlers._moderation_context(message, bot)
+        assert result is None
+        bot.get_chat_member.assert_not_awaited()
+        message.answer.assert_awaited_once()
+    asyncio.run(scenario())
