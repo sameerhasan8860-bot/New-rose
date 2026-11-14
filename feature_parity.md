@@ -46,7 +46,7 @@ The following official pages were inspected for command semantics. This is a bou
 | Official reference | Verified command families | MASTER X implementation status |
 |---|---|---|
 | https://missrose.org/docs/basics/command-usage/ | on/off aliases; duration syntax | Partial: current toggles accept on/off; durations use s/m/h/d, not Rose's full documented syntax |
-| https://missrose.org/docs/moderation/restrictions/ | ban, tban, dban, sban; mute, tmute, dmute, smute; kick, dkick, skick; unban, unmute | Partial: ban/unban/kick/mute/unmute exist; timed ban/mute aliases, delete/silent variants and username/id target parsing are missing |
+| https://missrose.org/docs/moderation/restrictions/ | ban, tban, dban, sban; mute, tmute, dmute, smute; kick, dkick, skick; unban, unmute | Partial: ban/unban/kick/mute/unmute plus /tban and /tmute exist; delete/silent variants and username target parsing are missing |
 | https://missrose.org/docs/moderation/admins/ | admin permission mapping, promotion/demotion, anonymous admin verification | Partial: live group-admin verification exists; permission-specific command gates are inconsistent and anonymous admin verification is not implemented |
 | https://missrose.org/docs/moderation/disabling/ | disabled, disableable, disable, enable, disableadmin, disabledel | Not implemented |
 | https://missrose.org/docs/connections/ and https://missrose.org/docs/basics/connections/ | connect, disconnect, connection, reconnect; one active group and recent connection history | Not implemented |
