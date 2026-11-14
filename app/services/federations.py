@@ -55,3 +55,45 @@ async def federation_members(session, federation_id: int) -> list[int]:
     return list((await session.scalars(
         select(FederationGroup.chat_id).where(FederationGroup.federation_id == federation_id).order_by(FederationGroup.consented_at)
     )).all())
+
+
+async def federation_for_group(session, chat_id: int):
+    membership = await session.scalar(select(FederationGroup).where(FederationGroup.chat_id == chat_id))
+    if membership is None:
+        return None
+    return await session.get(Federation, membership.federation_id)
+
+
+async def record_federation_ban(session, *, federation_id: int, user_id: int,
+                                actor_chat_id: int, actor_id: int, reason: str = "") -> FederationBan:
+    existing = await session.scalar(select(FederationBan).where(
+        FederationBan.federation_id == federation_id, FederationBan.user_id == user_id
+    ))
+    if existing:
+        existing.actor_chat_id = actor_chat_id
+        existing.actor_id = actor_id
+        existing.reason = reason[:1000]
+        await session.flush()
+        return existing
+    row = FederationBan(federation_id=federation_id, user_id=user_id,
+                        actor_chat_id=actor_chat_id, actor_id=actor_id, reason=reason[:1000])
+    session.add(row)
+    await session.flush()
+    return row
+
+
+async def remove_federation_ban(session, *, federation_id: int, user_id: int) -> bool:
+    row = await session.scalar(select(FederationBan).where(
+        FederationBan.federation_id == federation_id, FederationBan.user_id == user_id
+    ))
+    if row is None:
+        return False
+    await session.delete(row)
+    await session.flush()
+    return True
+
+
+async def federation_ban_exists(session, *, federation_id: int, user_id: int) -> bool:
+    return await session.scalar(select(FederationBan.id).where(
+        FederationBan.federation_id == federation_id, FederationBan.user_id == user_id
+    )) is not None
