@@ -919,3 +919,45 @@ async def antiraid_toggle(message: Message, bot: Bot, database: Database):
         async with session.begin():
             await repo.set_setting(session, message.chat.id, "antiraid_enabled", value == "on")
     await message.answer("Anti-raid alerts turned " + value + ".")
+
+
+@router.message(Command("topic"))
+async def manage_topic(message: Message, bot: Bot):
+    if message.chat.type != ChatType.SUPERGROUP or not message.from_user:
+        await message.answer("Forum topics are available in supergroups only.")
+        return
+    if not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("Only current group administrators can manage topics.")
+        return
+    try:
+        actor = await bot.get_chat_member(message.chat.id, message.from_user.id)
+        me = await bot.get_chat_member(message.chat.id, (await bot.get_me()).id)
+        if actor.status != ChatMemberStatus.CREATOR and not getattr(actor, "can_manage_topics", False):
+            await message.answer("You need Telegram's Manage Topics permission.")
+            return
+        if me.status != ChatMemberStatus.CREATOR and not getattr(me, "can_manage_topics", False):
+            await message.answer("I need Telegram's Manage Topics permission.")
+            return
+        chat = await bot.get_chat(message.chat.id)
+        if not getattr(chat, "is_forum", False):
+            await message.answer("This supergroup has forum topics disabled.")
+            return
+        parts = _args(message).split(maxsplit=1)
+        action = parts[0].lower() if parts else ""
+        value = parts[1].strip() if len(parts) > 1 else ""
+        if action == "create" and value:
+            topic = await bot.create_forum_topic(message.chat.id, name=value[:128])
+            await message.answer(f"Created topic <b>{topic.name}</b> (ID <code>{topic.message_thread_id}</code>).")
+        elif action in {"close", "reopen", "delete"} and value.isdigit():
+            topic_id = int(value)
+            if action == "close":
+                await bot.close_forum_topic(message.chat.id, topic_id)
+            elif action == "reopen":
+                await bot.reopen_forum_topic(message.chat.id, topic_id)
+            else:
+                await bot.delete_forum_topic(message.chat.id, topic_id)
+            await message.answer(f"Topic {topic_id}: {action} completed.")
+        else:
+            await message.answer("Usage: /topic create NAME | /topic close ID | /topic reopen ID | /topic delete ID")
+    except (TelegramBadRequest, TelegramForbiddenError) as exc:
+        await message.answer(f"Telegram rejected the topic operation: {str(exc)[:200]}")
