@@ -36,6 +36,8 @@ def _allow_human_callback(callback: CallbackQuery) -> bool:
 
 router.message.filter(_allow_human_message)
 router.callback_query.filter(_allow_human_callback)
+from app.services.command_disabling import CommandDisablingMiddleware
+router.message.middleware(CommandDisablingMiddleware())
 _JOIN_WINDOWS = defaultdict(deque)
 _FLOOD_WINDOWS = defaultdict(deque)
 BRAND = "✦ 𝗠𝗔𝗦𝗧𝗘𝗥 𝗫 ✦"
@@ -132,6 +134,70 @@ async def help_command(message: Message):
         "Reply to a member: /ban, /tban 10m [reason], /kick, /mute 10m [reason], /tmute 10m [reason], /unmute, /warn [reason], /warnings.\n"
         "/unban accepts a replied user or numeric Telegram USER_ID. Admin rights and bot permissions are checked.\n\n/save NAME (reply) · /get NAME · /notes\n/filter keyword => response · /stop KEYWORD · /filters\n/welcome on|off · /setwelcome TEXT · /goodbye on|off\n/lock CATEGORY · /unlock CATEGORY · /locks · /blocklist add|del WORD · /antiflood on|off\n/closereport ID · /resetwarnings (reply) · /captcha on|off · /antiraid on|off · /topic create|close|reopen|delete · /purge COUNT (reply, max 100)\n/export · /import (reply to a JSON export; group settings only)\n/fed create NAME · /fed join ID · /fed leave · /fed info · /fban USER_ID [reason] · /funban USER_ID · /privacy [delete]\n/clean COUNT (max 20) · /format bold|italic|code|quote TEXT"
     )
+
+
+@router.message(Command("disable"))
+async def disable_command(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only current group administrators can disable commands.")
+        return
+    name = _args(message).strip().lstrip("/").split("@", 1)[0].lower()
+    from app.services.command_registry import get_command
+    if not name or name in {"start", "help", "disable", "enable", "disabled", "disableadmin"} or get_command(name) is None:
+        await message.answer("Usage: /disable COMMAND. Only implemented commands can be disabled; control commands stay available.")
+        return
+    repo = GroupRepository()
+    async with database.sessions() as session:
+        async with session.begin():
+            current = await repo.get_setting(session, message.chat.id, "disabled_commands", [])
+            if name not in current:
+                current.append(name)
+            await repo.set_setting(session, message.chat.id, "disabled_commands", sorted(set(current)))
+    await message.answer(f"✅ /{name} disabled in this group. Administrators can still use it unless /disableadmin on is set.")
+
+
+@router.message(Command("enable"))
+async def enable_command(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only current group administrators can enable commands.")
+        return
+    name = _args(message).strip().lstrip("/").split("@", 1)[0].lower()
+    if not name:
+        await message.answer("Usage: /enable COMMAND")
+        return
+    repo = GroupRepository()
+    async with database.sessions() as session:
+        async with session.begin():
+            current = await repo.get_setting(session, message.chat.id, "disabled_commands", [])
+            if name in current:
+                current.remove(name)
+            await repo.set_setting(session, message.chat.id, "disabled_commands", current)
+    await message.answer(f"✅ /{name} enabled in this group.")
+
+
+@router.message(Command("disabled"))
+async def list_disabled_commands(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only current group administrators can view disabled commands.")
+        return
+    async with database.sessions() as session:
+        disabled = await GroupRepository().get_setting(session, message.chat.id, "disabled_commands", [])
+    await message.answer("Disabled commands: " + (", ".join("/" + item for item in disabled) if disabled else "none"))
+
+
+@router.message(Command("disableadmin"))
+async def disable_for_admins(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only current group administrators can change this setting.")
+        return
+    value = _args(message).lower()
+    if value not in {"on", "off"}:
+        await message.answer("Usage: /disableadmin on|off. When on, disabled commands are blocked for admins too.")
+        return
+    async with database.sessions() as session:
+        async with session.begin():
+            await GroupRepository().set_setting(session, message.chat.id, "disable_commands_for_admins", value == "on")
+    await message.answer("✅ Disabled commands now apply to admins too." if value == "on" else "✅ Administrators can bypass disabled commands.")
 
 
 @router.message(Command("settings"))
