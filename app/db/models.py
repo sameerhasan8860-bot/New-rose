@@ -117,3 +117,10 @@ class CaptchaChallenge(Base):
     status: Mapped[str] = mapped_column(String(16), default="pending", nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class UpdateClaim(Base):
+    __tablename__ = "update_claims"
+    update_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    owner_token: Mapped[str] = mapped_column(String(64), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
