@@ -10,7 +10,7 @@ import app.handlers as handlers
 def _message():
     return SimpleNamespace(
         chat=SimpleNamespace(id=-100123, type="supergroup"),
-        from_user=SimpleNamespace(id=10),
+        from_user=SimpleNamespace(id=10, is_bot=False),
         reply_to_message=SimpleNamespace(from_user=SimpleNamespace(
             id=20, is_bot=False, full_name="Target User"
         )),
