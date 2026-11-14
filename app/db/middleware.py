@@ -5,7 +5,12 @@ from app.db.repositories import mark_update_processed
 
 
 class UpdateDeduplicationMiddleware(BaseMiddleware):
-    """Suppress duplicate Telegram update deliveries using durable storage."""
+    """Persist a delivery only after its handler succeeds, so failed handlers can retry.
+
+    The post-handler commit avoids permanently dropping an update after a handler
+    exception. Concurrent duplicate deliveries still require a lease/claim table
+    before this can provide strict exactly-once processing.
+    """
     def __init__(self, database) -> None:
         self.database = database
 
@@ -13,8 +18,11 @@ class UpdateDeduplicationMiddleware(BaseMiddleware):
         if not isinstance(event, Update):
             return await handler(event, data)
         async with self.database.sessions() as session:
-            async with session.begin():
-                first_delivery = await mark_update_processed(session, event.update_id)
-        if not first_delivery:
+            existing = await session.get(__import__("app.db.models", fromlist=["ProcessedUpdate"]).ProcessedUpdate, event.update_id)
+        if existing is not None:
             return None
-        return await handler(event, data)
+        result = await handler(event, data)
+        async with self.database.sessions() as session:
+            async with session.begin():
+                await mark_update_processed(session, event.update_id)
+        return result
