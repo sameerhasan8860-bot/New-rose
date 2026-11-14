@@ -147,7 +147,7 @@ def test_captcha_challenges_are_persisted_and_group_scoped():
             async with session.begin():
                 session.add_all([Group(chat_id=-4101, title="A"), Group(chat_id=-4102, title="B")])
             async with session.begin():
-                session.add(CaptchaChallenge(chat_id=-4101, user_id=91, answer=7, expires_at=datetime.now(timezone.utc) + timedelta(minutes=5)))
+                session.add(CaptchaChallenge(chat_id=-4101, user_id=91, answer=7, choices_json="[7,8,6]", expires_at=datetime.now(timezone.utc) + timedelta(minutes=5)))
             async with db.sessions() as check:
                 rows = (await check.scalars(select(CaptchaChallenge).where(CaptchaChallenge.chat_id == -4101))).all()
                 other = (await check.scalars(select(CaptchaChallenge).where(CaptchaChallenge.chat_id == -4102))).all()
