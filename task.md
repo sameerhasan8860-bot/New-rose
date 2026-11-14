@@ -6,19 +6,20 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [x] Inspect repository metadata and tree
 - [x] Confirm repository was empty at audit time
 - [x] Commit baseline docs and starter scaffold
-- [x] Run CI and capture first test evidence (initial failure found: pytest import path; fixed in Phase 2 CI config)
+- [x] Identify first CI failure from test logs and correct the Unicode brand assertion
 
 ## Phase 2 — Telegram core and database
-- [x] Async SQLAlchemy database engine and schema bootstrap
-- [x] Initial tenant-root, group settings, admin cache, processed-update, moderation and warning models
-- [x] Chat-scoped settings repository
-- [x] Duplicate update guard backed by a unique update ID
-- [x] Command registry with explicit access metadata and implemented status
-- [x] Live Telegram group-admin authorization helper
-- [ ] Alembic migration environment and first versioned migration
-- [ ] Wire database lifecycle and idempotency middleware into polling runtime
-- [ ] Wire admin authorization into privileged command handlers
-- [ ] PostgreSQL integration test and concurrency test
+- [x] Async SQLAlchemy database engine and schema models
+- [x] Tenant-root groups and group-scoped settings repository
+- [x] Initial moderation action and warning tables
+- [x] Duplicate update guard backed by unique update IDs
+- [x] Command registry with explicit access metadata
+- [x] Live Telegram group-admin verification helper
+- [x] Alembic migration environment and initial versioned migration
+- [x] Wire migrations, database lifecycle, and update deduplication into polling runtime
+- [x] Protect /settings with live Telegram admin verification
+- [ ] CI evidence: migration + all tests pass on latest commit
+- [ ] PostgreSQL integration and concurrency tests
 
 ## Phase 3 — Rose compatibility
 - [ ] Build command catalogue from official docs
