@@ -1,3 +1,4 @@
+import json
 import random
 import re
 import time
@@ -587,11 +588,16 @@ async def greet_new_member(event: ChatMemberUpdated, bot: Bot, database: Databas
                 if chat.permissions is not None:
                     a, b = random.randint(1, 9), random.randint(1, 9)
                     answer = a + b
+                    choices = [answer, answer + 1, max(0, answer - 1)]
+                    random.shuffle(choices)
                     async with database.sessions() as session:
                         async with session.begin():
-                            session.add(CaptchaChallenge(chat_id=event.chat.id, user_id=user.id, answer=answer, expires_at=datetime.now(timezone.utc) + timedelta(minutes=5)))
+                            challenge = CaptchaChallenge(chat_id=event.chat.id, user_id=user.id, answer=answer, choices_json=json.dumps(choices), expires_at=datetime.now(timezone.utc) + timedelta(minutes=5))
+                            session.add(challenge)
+                            await session.flush()
+                            challenge_id = challenge.id
                     await bot.restrict_chat_member(event.chat.id, user.id, permissions=ChatPermissions(can_send_messages=False))
-                    buttons = [[InlineKeyboardButton(text=str(value), callback_data=f"mxcap:{event.chat.id}:{user.id}:{value}") for value in (answer, answer + 1, max(0, answer - 1))]]
+                    buttons = [[InlineKeyboardButton(text=str(value), callback_data=f"mxcap:{challenge_id}:{index}") for index, value in enumerate(choices)]]
                     await bot.send_message(event.chat.id, f"🧩 {user.full_name}, solve this to unlock chatting: {a} + {b} = ?", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
         except (TelegramBadRequest, TelegramForbiddenError):
             pass
@@ -606,42 +612,45 @@ async def greet_new_member(event: ChatMemberUpdated, bot: Bot, database: Databas
 @router.callback_query(F.data.startswith("mxcap:"))
 async def verify_captcha(callback: CallbackQuery, bot: Bot, database: Database):
     try:
-        _, raw_chat, raw_user, raw_answer = (callback.data or "").split(":")
-        chat_id, user_id, selected = int(raw_chat), int(raw_user), int(raw_answer)
+        _, raw_id, raw_index = (callback.data or "").split(":")
+        challenge_id, selected_index = int(raw_id), int(raw_index)
     except (ValueError, AttributeError):
         await callback.answer("Invalid challenge.", show_alert=True)
         return
-    if callback.from_user.id != user_id:
-        await callback.answer("This challenge belongs to another member.", show_alert=True)
-        return
     async with database.sessions() as session:
-        async with session.begin():
-            challenge = (await session.scalars(select(CaptchaChallenge).where(
-                CaptchaChallenge.chat_id == chat_id,
-                CaptchaChallenge.user_id == user_id,
-                CaptchaChallenge.status == "pending",
-            ).order_by(CaptchaChallenge.created_at.desc()).limit(1))).first()
-            if challenge is None or challenge.expires_at < datetime.now(timezone.utc):
-                if challenge is not None:
-                    challenge.status = "expired"
-                valid = False
-            else:
-                valid = challenge.answer == selected
-                if valid:
-                    challenge.status = "passed"
-    if not valid:
-        await callback.answer("Incorrect or expired. Ask an admin to issue a new challenge.", show_alert=True)
-        return
+        challenge = await session.get(CaptchaChallenge, challenge_id)
+        if challenge is None or challenge.user_id != callback.from_user.id or challenge.status != "pending":
+            await callback.answer("This challenge is invalid or already used.", show_alert=True)
+            return
+        chat_id, user_id = challenge.chat_id, challenge.user_id
+        expired = challenge.expires_at < datetime.now(timezone.utc)
+        choices = json.loads(challenge.choices_json)
+        valid = not expired and 0 <= selected_index < len(choices) and choices[selected_index] == challenge.answer
+        if expired:
+            async with session.begin():
+                challenge.status = "expired"
+        elif not valid:
+            await callback.answer("Incorrect answer. Try another option.", show_alert=True)
+            return
     try:
         chat = await bot.get_chat(chat_id)
         if chat.permissions is None:
             await callback.answer("Group defaults unavailable; ask an admin.", show_alert=True)
             return
         await bot.restrict_chat_member(chat_id, user_id, permissions=chat.permissions)
-        await callback.message.edit_text("✅ CAPTCHA passed. You can now chat.")
     except (TelegramBadRequest, TelegramForbiddenError):
         await callback.answer("Could not restore group permissions. Please contact an admin.", show_alert=True)
         return
+    if expired:
+        await callback.message.edit_text("⌛ CAPTCHA expired. Your group permissions were restored; ask an admin if you still cannot chat.")
+        await callback.answer("Expired.")
+        return
+    async with database.sessions() as session:
+        async with session.begin():
+            row = await session.get(CaptchaChallenge, challenge_id)
+            if row is not None and row.status == "pending":
+                row.status = "passed"
+    await callback.message.edit_text("✅ CAPTCHA passed. You can now chat.")
     await callback.answer("Verified!")
 
 
