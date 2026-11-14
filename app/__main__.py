@@ -9,6 +9,7 @@ from app.config import Settings
 from app.db.engine import Database
 from app.db.middleware import UpdateDeduplicationMiddleware
 from app.handlers import router
+from app.services.captcha import captcha_expiry_worker
 
 
 async def main() -> None:
@@ -25,10 +26,16 @@ async def main() -> None:
     dp["settings"] = settings
     dp.update.outer_middleware(UpdateDeduplicationMiddleware(database))
     dp.include_router(router)
+    expiry_task = asyncio.create_task(captcha_expiry_worker(bot, database))
     try:
         await bot.delete_webhook(drop_pending_updates=False)
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
+        expiry_task.cancel()
+        try:
+            await expiry_task
+        except asyncio.CancelledError:
+            pass
         await bot.session.close()
         await database.close()
 
