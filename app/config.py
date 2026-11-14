@@ -1,8 +1,12 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
     bot_token: str
+    # Temporary compatibility while persistence call sites are migrated.
     database_url: str = "sqlite+aiosqlite:///./master_x.db"
+    mongodb_uri: str = ""
+    mongodb_database: str = "master_x"
     log_level: str = "INFO"
     global_owner_ids: str = ""
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
