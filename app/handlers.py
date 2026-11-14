@@ -525,3 +525,38 @@ async def greet_new_member(event: ChatMemberUpdated, bot: Bot, database: Databas
     mention = f'<a href="tg://user?id={user.id}">{html.escape(user.full_name)}</a>'
     rendered = str(template).replace("{first}", html.escape(user.first_name)).replace("{name}", html.escape(user.full_name)).replace("{id}", str(user.id)).replace("{mention}", mention)
     await bot.send_message(event.chat.id, rendered[:4000])
+
+
+@router.message(Command("purge"))
+async def purge_messages(message: Message, bot: Bot):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can purge messages.")
+        return
+    if message.reply_to_message is None:
+        await message.answer("Reply to the first message to delete: /purge [count, 1–100].")
+        return
+    raw_count = _args(message).split(maxsplit=1)[0] if _args(message) else "1"
+    if not raw_count.isdigit() or not 1 <= int(raw_count) <= 100:
+        await message.answer("Count must be between 1 and 100.")
+        return
+    bot_member = await bot.get_chat_member(message.chat.id, (await bot.get_me()).id)
+    if bot_member.status != ChatMemberStatus.CREATOR and not getattr(bot_member, "can_delete_messages", False):
+        await message.answer("I need the Telegram 'Delete messages' admin permission.")
+        return
+    start_id = message.reply_to_message.message_id
+    end_id = start_id + int(raw_count) - 1
+    deleted = 0
+    for message_id in range(start_id, end_id + 1):
+        try:
+            await bot.delete_message(message.chat.id, message_id)
+            deleted += 1
+        except TelegramBadRequest:
+            continue
+        except TelegramForbiddenError:
+            await message.answer("Telegram denied message deletion; stopping purge.")
+            return
+    try:
+        await bot.delete_message(message.chat.id, message.message_id)
+    except (TelegramBadRequest, TelegramForbiddenError):
+        pass
+    await message.answer(f"🧹 Purge complete: deleted {deleted} message(s).")
