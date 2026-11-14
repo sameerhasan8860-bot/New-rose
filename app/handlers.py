@@ -1049,3 +1049,31 @@ async def federation_command(message: Message, bot: Bot, database: Database):
         await message.answer(response)
     except ValueError as exc:
         await message.answer("⛔ " + str(exc))
+
+
+@router.message(Command("privacy"))
+async def privacy_command(message: Message, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user:
+        await message.answer("Use /privacy inside a group. /privacy shows scope; /privacy delete removes your records from this group.")
+        return
+    if message.from_user.is_bot:
+        return
+    action = _args(message).lower()
+    if action != "delete":
+        await message.answer(
+            "🔐 <b>Group privacy</b>\n"
+            "MASTER X stores group-scoped warnings, reports, moderation logs, notes, filters, blocked terms, and pending CAPTCHA challenges. "
+            "Data is isolated by group. Use /privacy delete to erase records associated with your Telegram account in this group only. "
+            "This does not delete Telegram messages or data in other groups."
+        )
+        return
+    from app.services.privacy import erase_user_group_records
+    async with database.sessions() as session:
+        async with session.begin():
+            counts = await erase_user_group_records(session, chat_id=message.chat.id, user_id=message.from_user.id)
+    total = sum(counts.values())
+    await message.answer(
+        f"✅ Erased {total} group-scoped record(s) associated with your account: " +
+        ", ".join(f"{key.replace('_', ' ')} {value}" for key, value in counts.items()) +
+        ". Telegram messages and records in other groups are unaffected."
+    )
