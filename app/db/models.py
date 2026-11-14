@@ -104,3 +104,15 @@ class BlockedTerm(Base):
     term: Mapped[str] = mapped_column(String(100), nullable=False)
     creator_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class CaptchaChallenge(Base):
+    __tablename__ = "captcha_challenges"
+    __table_args__ = (Index("ix_captcha_chat_user_status", "chat_id", "user_id", "status"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    chat_id: Mapped[int] = mapped_column(ForeignKey("groups.chat_id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    answer: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default="pending", nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
