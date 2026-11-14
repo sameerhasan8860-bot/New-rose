@@ -1008,3 +1008,44 @@ async def import_group_config(message: Message, bot: Bot, database: Database):
             for key, value in settings.items():
                 await repo.set_setting(session, message.chat.id, key, value)
     await message.answer(f"✅ Imported {len(settings)} supported setting(s) into this group. Other groups were not changed.")
+
+
+@router.message(Command("fed"))
+async def federation_command(message: Message, bot: Bot, database: Database):
+    """Manage this group's explicit federation membership; no cross-group action is automatic."""
+    if message.chat.type not in GROUP_TYPES or not message.from_user:
+        await message.answer("Use /fed inside a group.")
+        return
+    if not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only current group administrators can manage federation consent.")
+        return
+    parts = _args(message).split(maxsplit=1)
+    action = parts[0].lower() if parts else "info"
+    value = parts[1].strip() if len(parts) > 1 else ""
+    from app.db.models import Federation, FederationGroup
+    from app.services.federations import create_federation, federation_members, join_federation, leave_federation
+    try:
+        async with database.sessions() as session:
+            async with session.begin():
+                if action == "create" and value:
+                    federation = await create_federation(session, name=value, chat_id=message.chat.id, actor_id=message.from_user.id)
+                    response = f"✅ Federation <b>{federation.name}</b> created. This group opted in as its first member."
+                elif action == "join" and value.isdigit():
+                    await join_federation(session, federation_id=int(value), chat_id=message.chat.id, actor_id=message.from_user.id)
+                    response = f"✅ This group explicitly joined federation #{value}."
+                elif action == "leave":
+                    removed = await leave_federation(session, chat_id=message.chat.id)
+                    response = "This group left its federation." if removed else "This group is not in a federation."
+                elif action == "info":
+                    membership = await session.scalar(select(FederationGroup).where(FederationGroup.chat_id == message.chat.id))
+                    if membership is None:
+                        response = "This group has not opted into a federation."
+                    else:
+                        federation = await session.get(Federation, membership.federation_id)
+                        members = await federation_members(session, membership.federation_id)
+                        response = f"Federation <b>{federation.name}</b> (#{federation.id}) · {len(members)} opted-in group(s)."
+                else:
+                    response = "Usage: /fed create NAME | /fed join FEDERATION_ID | /fed leave | /fed info"
+        await message.answer(response)
+    except ValueError as exc:
+        await message.answer("⛔ " + str(exc))
