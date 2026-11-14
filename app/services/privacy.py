@@ -1,7 +1,7 @@
 """Group-scoped self-service privacy operations."""
 from sqlalchemy import delete, or_
 
-from app.db.models import ModerationAction, ReportRecord, WarningRecord
+from app.db.models import BlockedTerm, CaptchaChallenge, GroupFilter, ModerationAction, Note, ReportRecord, WarningRecord
 
 
 async def erase_user_group_records(session, *, chat_id: int, user_id: int) -> dict[str, int]:
