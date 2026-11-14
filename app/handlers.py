@@ -122,18 +122,88 @@ async def _record_action(database: Database, chat_id: int, title: str, actor_id:
             session.add(ModerationAction(chat_id=chat_id, actor_id=actor_id, target_id=target_id, action=action, reason=reason[:1000]))
 
 
+HELP_PAGES = {
+    "core": ("✨ 𝗚𝗘𝗡𝗘𝗥𝗔𝗟", "/start — Welcome screen\n/help — Command guide\n/about — About MASTER X\n/id — Show chat and user IDs\n/ping — Check response\n/status — Basic runtime status\n/settings — Group settings status (admins)"),
+    "moderation": ("🛡️ 𝗠𝗢𝗗𝗘𝗥𝗔𝗧𝗜𝗢𝗡", "/ban — Ban a replied-to member\n/tban 10m [reason] — Temporary ban\n/kick — Remove a replied-to member\n/unban — Unban replied user or USER_ID\n/mute 10m [reason] — Temporary mute\n/tmute 10m [reason] — Timed mute\n/unmute — Restore group defaults\n/warn [reason] — Warn a member\n/warnings — View member warnings\n/resetwarnings — Reset warnings (reply)\n/purge COUNT — Delete up to 100 messages"),
+    "antispam": ("🚨 𝗔𝗡𝗧𝗜-𝗦𝗣𝗔𝗠 & 𝗦𝗔𝗙𝗘𝗧𝗬", "/antiflood on|off — Text flood protection\n/captcha on|off — New-member verification\n/antiraid on|off — Join-spike alerts\n/lock CATEGORY — Lock links/media etc.\n/unlock CATEGORY — Remove a lock\n/locks — List active locks\n/blocklist add|del WORD — Manage blocked terms"),
+    "community": ("👋 𝗖𝗢𝗠𝗠𝗨𝗡𝗜𝗧𝗬", "/welcome on|off — Welcome messages\n/setwelcome TEXT — Set welcome template\n/goodbye on|off — Leave notices\n/filter keyword => response — Add auto-reply\n/stop KEYWORD — Remove a filter\n/filters — List filters"),
+    "notes": ("🗂️ 𝗡𝗢𝗧𝗘𝗦 & 𝗥𝗘𝗣𝗢𝗥𝗧𝗦", "/save NAME — Save replied-to message\n/get NAME — Retrieve a note\n/notes — List notes\n/report — Report a replied-to message\n/reports — Review reports (admins)\n/closereport ID — Close a report\n/adminlog — Recent moderation log"),
+    "federation": ("🌐 𝗙𝗘𝗗𝗘𝗥𝗔𝗧𝗜𝗢𝗡 & 𝗣𝗥𝗜𝗩𝗔𝗖𝗬", "/fed create NAME — Create federation\n/fed join ID — Join federation\n/fed leave — Leave federation\n/fed info — Federation details\n/fban USER_ID [reason] — Federation ban\n/funban USER_ID — Revoke federation ban\n/privacy — Explain stored data\n/privacy delete — Erase your records in this group"),
+    "tools": ("⚙️ 𝗧𝗢𝗢𝗟𝗦", "/topic create|close|reopen|delete — Manage forum topics\n/export — Export supported group settings\n/import — Import a settings export\n/clean COUNT — Clean up to 20 recent messages\n/format bold|italic|code|quote TEXT — Format text"),
+    "admin": ("🔧 𝗔𝗗𝗠𝗜𝗡 𝗖𝗢𝗡𝗧𝗥𝗢𝗟𝗦", "/disable COMMAND — Disable a command in this group\n/enable COMMAND — Re-enable a command\n/disabled — List disabled commands\n/disableadmin on|off — Apply disabled commands to admins"),
+}
+HELP_HOME = (
+    f"{BRAND}\n━━━━━━━━━━━━━━━━━━━━\n"
+    "𝗛𝗘𝗟𝗣 𝗖𝗘𝗡𝗧𝗘𝗥  •  𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗚𝗨𝗜𝗗𝗘\n\n"
+    "Explore MASTER X tools by category. Select a section below to view commands and usage.\n\n"
+    "🛡️ Moderation  ·  🚨 Anti-Spam  ·  👋 Community\n"
+    "🗂️ Notes & Reports  ·  🌐 Federation  ·  ⚙️ Tools"
+)
+HELP_BUTTONS = [
+    [("✨ General", "mxhelp:core"), ("🛡️ Moderation", "mxhelp:moderation")],
+    [("🚨 Anti-Spam", "mxhelp:antispam"), ("👋 Community", "mxhelp:community")],
+    [("🗂️ Notes & Reports", "mxhelp:notes"), ("🌐 Federation", "mxhelp:federation")],
+    [("⚙️ Tools", "mxhelp:tools"), ("🔧 Admin", "mxhelp:admin")],
+]
+def _help_keyboard(page: str = "home") -> InlineKeyboardMarkup:
+    rows = [[InlineKeyboardButton(text=label, callback_data=data) for label, data in row] for row in HELP_BUTTONS]
+    if page != "home":
+        rows.append([InlineKeyboardButton(text="⬅️ Back to Help", callback_data="mxhelp:home")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
 @router.message(Command("start"))
 async def start(message: Message):
-    await message.answer(f"{BRAND}\n━━━━━━━━━━━━━━━━━━\nYour community command center is coming online.\n\n🛡️ Moderation • ✨ Automation\n🤖 AI companion • 📊 Community insights\n\nUse /help to explore this build.")
+    text = (
+        f"{BRAND}\n━━━━━━━━━━━━━━━━━━━━\n"
+        "𝗬𝗢𝗨𝗥 𝗖𝗢𝗠𝗠𝗨𝗡𝗜𝗧𝗬. 𝗬𝗢𝗨𝗥 𝗖𝗢𝗡𝗧𝗥𝗢𝗟.\n\n"
+        "Welcome to MASTER X — your community management companion.\n\n"
+        "🛡️ Smart moderation & member safety\n"
+        "🚨 Anti-spam, CAPTCHA & anti-raid tools\n"
+        "👋 Welcome messages, notes & filters\n"
+        "🌐 Federations, reports & privacy controls\n\n"
+        "Add me to your group and grant only the permissions needed for the tools you use.\n"
+        "Tap Help to explore the command center."
+    )
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📚  Help & Commands", callback_data="mxhelp:home")],
+        [InlineKeyboardButton(text="ℹ️  About MASTER X", callback_data="mxhelp:about")],
+    ])
+    await message.answer(text, reply_markup=keyboard)
 
 
 @router.message(Command("help"))
 async def help_command(message: Message):
-    await message.answer(
-        f"{BRAND}\n𝗖𝗢𝗥𝗘 & 𝗠𝗢𝗗𝗘𝗥𝗔𝗧𝗜𝗢𝗡\n/start — Welcome\n/help — Commands\n/settings — Group settings status\n/about — About MASTER X\n/id — IDs\n/ping — Runtime response\n/status — Health\n\n"
-        "Reply to a member: /ban, /tban 10m [reason], /kick, /mute 10m [reason], /tmute 10m [reason], /unmute, /warn [reason], /warnings.\n"
-        "/unban accepts a replied user or numeric Telegram USER_ID. Admin rights and bot permissions are checked.\n\n/save NAME (reply) · /get NAME · /notes\n/filter keyword => response · /stop KEYWORD · /filters\n/welcome on|off · /setwelcome TEXT · /goodbye on|off\n/lock CATEGORY · /unlock CATEGORY · /locks · /blocklist add|del WORD · /antiflood on|off\n/closereport ID · /resetwarnings (reply) · /captcha on|off · /antiraid on|off · /topic create|close|reopen|delete · /purge COUNT (reply, max 100)\n/export · /import (reply to a JSON export; group settings only)\n/fed create NAME · /fed join ID · /fed leave · /fed info · /fban USER_ID [reason] · /funban USER_ID · /privacy [delete]\n/clean COUNT (max 20) · /format bold|italic|code|quote TEXT"
-    )
+    await message.answer(HELP_HOME, reply_markup=_help_keyboard())
+
+
+@router.callback_query(F.data.startswith("mxhelp:"))
+async def help_navigation(callback: CallbackQuery):
+    page = callback.data.split(":", 1)[1]
+    if page == "about":
+        text = (
+            f"{BRAND}\n𝗔𝗕𝗢𝗨𝗧 𝗠𝗔𝗦𝗧𝗘𝗥 𝗫\n\n"
+            "A modular community-management bot built for safer, better-organized Telegram groups.\n\n"
+            "Use /help to browse the command guide."
+        )
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📚 Open Help Center", callback_data="mxhelp:home")]
+        ])
+    elif page == "home":
+        text, keyboard = HELP_HOME, _help_keyboard()
+    elif page in HELP_PAGES:
+        title, body = HELP_PAGES[page]
+        text = f"{BRAND}\n━━━━━━━━━━━━━━━━━━━━\n{title}\n\n{body}\n\n<i>Some commands require group-admin rights and matching bot permissions. Use commands in the group where you manage members.</i>"
+        keyboard = _help_keyboard(page)
+    else:
+        await callback.answer("This help section is unavailable.", show_alert=True)
+        return
+    try:
+        await callback.message.edit_text(text, reply_markup=keyboard)
+    except TelegramBadRequest as exc:
+        if "message is not modified" not in str(exc).lower():
+            raise
+    await callback.answer()
 
 
 @router.message(Command("disable"))
