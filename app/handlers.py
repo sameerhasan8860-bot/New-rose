@@ -9,7 +9,7 @@ from aiogram.types import ChatMemberUpdated, ChatPermissions, Message, User
 from sqlalchemy import func, select
 
 from app.db.engine import Database
-from app.db.models import Group, GroupFilter, GroupSetting, ModerationAction, Note, ReportRecord, WarningRecord
+from app.db.models import BlockedTerm, Group, GroupFilter, GroupSetting, ModerationAction, Note, ReportRecord, WarningRecord
 from app.db.repositories import GroupRepository
 from app.services.authorization import has_group_admin_rights
 
@@ -459,12 +459,31 @@ async def list_filters(message: Message, database: Database):
 
 
 @router.message(F.text & ~F.text.startswith("/"))
-async def match_group_filter(message: Message, database: Database):
+async def match_group_filter(message: Message, bot: Bot, database: Database):
     if message.chat.type not in GROUP_TYPES or not message.text or not message.from_user or message.from_user.is_bot:
         return
+    repo = GroupRepository()
     async with database.sessions() as session:
         rows = (await session.scalars(select(GroupFilter).where(GroupFilter.chat_id == message.chat.id).limit(100))).all()
+        blocked = (await session.scalars(select(BlockedTerm).where(BlockedTerm.chat_id == message.chat.id).limit(200))).all()
+        locks = await repo.get_setting(session, message.chat.id, "locks", [])
     text_value = message.text.casefold()
+    blocked_match = next((term for term in blocked if term.term in text_value), None)
+    link_entities = any(entity.type in {"url", "text_link"} for entity in (message.entities or []))
+    lock_match = (
+        ("links" in locks and link_entities)
+        or ("photos" in locks and bool(message.photo))
+        or ("videos" in locks and bool(message.video or message.video_note or message.animation))
+        or ("documents" in locks and bool(message.document or message.audio or message.voice))
+        or ("stickers" in locks and bool(message.sticker))
+        or ("media" in locks and bool(message.photo or message.video or message.document or message.audio or message.voice or message.sticker or message.animation))
+    )
+    if blocked_match or lock_match:
+        try:
+            await bot.delete_message(message.chat.id, message.message_id)
+        except (TelegramBadRequest, TelegramForbiddenError):
+            pass
+        return
     for row in rows:
         if row.trigger in text_value:
             import html
@@ -560,3 +579,115 @@ async def purge_messages(message: Message, bot: Bot):
     except (TelegramBadRequest, TelegramForbiddenError):
         pass
     await message.answer(f"🧹 Purge complete: deleted {deleted} message(s).")
+
+
+_LOCK_CATEGORIES = {"links", "photos", "videos", "documents", "stickers", "media"}
+
+
+async def _set_lock(message: Message, bot: Bot, database: Database, *, enabled: bool):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can manage locks.")
+        return
+    category = _args(message).lower()
+    if category not in _LOCK_CATEGORIES:
+        await message.answer("Choose: links, photos, videos, documents, stickers, media.")
+        return
+    repo = GroupRepository()
+    async with database.sessions() as session:
+        async with session.begin():
+            current = await repo.get_setting(session, message.chat.id, "locks", [])
+            values = set(current or [])
+            values.add(category) if enabled else values.discard(category)
+            await repo.set_setting(session, message.chat.id, "locks", sorted(values))
+    await message.answer(f"🔒 {category} locked." if enabled else f"🔓 {category} unlocked.")
+
+
+@router.message(Command("lock"))
+async def lock_category(message: Message, bot: Bot, database: Database):
+    await _set_lock(message, bot, database, enabled=True)
+
+
+@router.message(Command("unlock"))
+async def unlock_category(message: Message, bot: Bot, database: Database):
+    await _set_lock(message, bot, database, enabled=False)
+
+
+@router.message(Command("locks"))
+async def show_locks(message: Message, database: Database):
+    if message.chat.type not in GROUP_TYPES:
+        await message.answer("Use /locks inside a group.")
+        return
+    repo = GroupRepository()
+    async with database.sessions() as session:
+        values = await repo.get_setting(session, message.chat.id, "locks", [])
+    await message.answer("🔐 Active locks: " + (", ".join(values) if values else "none"))
+
+
+@router.message(Command("blocklist"))
+async def manage_blocklist(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES:
+        await message.answer("Use /blocklist inside a group.")
+        return
+    parts = _args(message).split(maxsplit=1)
+    action = parts[0].lower() if parts else "list"
+    if action == "list":
+        async with database.sessions() as session:
+            rows = (await session.scalars(select(BlockedTerm).where(BlockedTerm.chat_id == message.chat.id).order_by(BlockedTerm.term).limit(100))).all()
+        await message.answer("🚫 Blocked terms: " + (", ".join(row.term for row in rows) if rows else "none"))
+        return
+    if not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can change the blocklist.")
+        return
+    if len(parts) < 2 or action not in {"add", "del", "remove"}:
+        await message.answer("Usage: /blocklist add WORD or /blocklist del WORD; /blocklist lists terms.")
+        return
+    term = parts[1].strip().casefold()
+    if not term or len(term) > 100:
+        await message.answer("Term must be 1–100 characters.")
+        return
+    async with database.sessions() as session:
+        async with session.begin():
+            row = (await session.scalars(select(BlockedTerm).where(BlockedTerm.chat_id == message.chat.id, BlockedTerm.term == term))).first()
+            if action == "add" and row is None:
+                group = await session.get(Group, message.chat.id)
+                if group is None:
+                    session.add(Group(chat_id=message.chat.id, title=message.chat.title or ""))
+                    await session.flush()
+                session.add(BlockedTerm(chat_id=message.chat.id, term=term, creator_id=message.from_user.id))
+            elif action in {"del", "remove"} and row is not None:
+                await session.delete(row)
+    await message.answer("✅ Blocklist updated.")
+
+
+@router.message(Command("goodbye"))
+async def goodbye_toggle(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can configure goodbye messages.")
+        return
+    value = _args(message).lower()
+    if value not in {"on", "off"}:
+        await message.answer("Usage: /goodbye on OR /goodbye off")
+        return
+    repo = GroupRepository()
+    async with database.sessions() as session:
+        async with session.begin():
+            await repo.set_setting(session, message.chat.id, "goodbye_enabled", value == "on")
+    await message.answer(f"👋 Goodbye messages turned {value}.")
+
+
+@router.chat_member()
+async def goodbye_member(event: ChatMemberUpdated, bot: Bot, database: Database):
+    if event.chat.type not in GROUP_TYPES:
+        return
+    leaving = {ChatMemberStatus.LEFT, ChatMemberStatus.KICKED}
+    if event.old_chat_member.status not in {ChatMemberStatus.MEMBER, ChatMemberStatus.RESTRICTED} or event.new_chat_member.status not in leaving:
+        return
+    user = event.old_chat_member.user
+    if user.is_bot:
+        return
+    repo = GroupRepository()
+    async with database.sessions() as session:
+        enabled = await repo.get_setting(session, event.chat.id, "goodbye_enabled", False)
+    if enabled:
+        import html
+        await bot.send_message(event.chat.id, f"👋 {html.escape(user.full_name)} left the group.")
