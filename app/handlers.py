@@ -627,8 +627,8 @@ async def verify_captcha(callback: CallbackQuery, bot: Bot, database: Database):
         choices = json.loads(challenge.choices_json)
         valid = not expired and 0 <= selected_index < len(choices) and choices[selected_index] == challenge.answer
         if expired:
-            async with session.begin():
-                challenge.status = "expired"
+            challenge.status = "expired"
+            await session.commit()
         elif not valid:
             await callback.answer("Incorrect answer. Try another option.", show_alert=True)
             return
