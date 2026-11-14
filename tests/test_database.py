@@ -1,6 +1,6 @@
 import asyncio
 from app.db.engine import Database
-from app.db.models import Group, ReportRecord
+from app.db.models import Group, GroupFilter, Note, ReportRecord
 from app.db.repositories import GroupRepository, mark_update_processed
 
 
@@ -59,3 +59,24 @@ def test_command_registry_only_lists_real_core_commands():
     assert get_command("/help").name == "help"
     assert get_command("not-a-command") is None
     assert {"report", "reports", "adminlog"}.issubset(COMMAND_MAP)
+
+
+def test_notes_and_filters_are_isolated_by_group():
+    async def scenario():
+        db = Database("sqlite+aiosqlite:///:memory:")
+        await db.create_schema()
+        async with db.sessions() as session:
+            async with session.begin():
+                session.add_all([Group(chat_id=-2001, title="A"), Group(chat_id=-2002, title="B")])
+            async with session.begin():
+                session.add(Note(chat_id=-2001, name="rules", content="Be kind", creator_id=1))
+                session.add(GroupFilter(chat_id=-2001, trigger="hello", response="Welcome", creator_id=1))
+                session.add(Note(chat_id=-2002, name="rules", content="Other rules", creator_id=2))
+            async with session.begin():
+                from sqlalchemy import select
+                notes_a = (await session.scalars(select(Note).where(Note.chat_id == -2001))).all()
+                filters_b = (await session.scalars(select(GroupFilter).where(GroupFilter.chat_id == -2002))).all()
+                assert len(notes_a) == 1 and notes_a[0].content == "Be kind"
+                assert filters_b == []
+        await db.close()
+    asyncio.run(scenario())
