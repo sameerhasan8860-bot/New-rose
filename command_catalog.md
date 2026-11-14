@@ -29,6 +29,7 @@ This catalogue lists handlers that exist in the current repository. Commands are
 | /filters | Group | List keyword filters | Group member |
 | /welcome on/off | Group | Enable or disable new-member welcome messages | Group admin |
 | /setwelcome TEXT | Group | Set welcome template; supports {first}, {name}, {id}, {mention} | Group admin |
+| /purge COUNT | Group | Delete 1–100 messages from a replied-to message onward; requires delete permission | Group admin + bot delete permission |
 
 Not yet implemented: goodbye, locks, blocklists, CAPTCHA, antiflood, antiraid, federations, connections, topics, privacy, cleaning, formatting, import/export, and bot-to-bot safeguards. Notes, keyword filters, and configurable new-member welcome messages are implemented in the current build. Do not advertise these as working.
 
