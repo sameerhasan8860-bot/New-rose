@@ -51,7 +51,7 @@ async def _moderation_context(message: Message, bot: Bot, *, require_bot_restric
         await message.answer("This command works inside a group only.")
         return None
     actor = message.from_user
-    if actor is None or not await has_group_admin_rights(bot, message.chat.id, actor.id):
+    if actor is None or actor.is_bot or not await has_group_admin_rights(bot, message.chat.id, actor.id):
         await message.answer("⛔ Only current group administrators can use this command.")
         return None
     try:
