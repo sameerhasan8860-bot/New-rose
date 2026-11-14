@@ -1072,6 +1072,107 @@ async def federation_command(message: Message, bot: Bot, database: Database):
         await message.answer("⛔ " + str(exc))
 
 
+async def _federation_moderation(message: Message, bot: Bot, database: Database, *, revoke: bool) -> None:
+    if message.chat.type not in GROUP_TYPES or message.from_user is None:
+        await message.answer("Use this command inside a group.")
+        return
+    actor = message.from_user
+    if actor.is_bot or not await has_group_admin_rights(bot, message.chat.id, actor.id):
+        await message.answer("⛔ Only current group administrators can manage federation bans.")
+        return
+    try:
+        actor_member = await bot.get_chat_member(message.chat.id, actor.id)
+        me = await bot.get_chat_member(message.chat.id, (await bot.get_me()).id)
+        if actor_member.status != ChatMemberStatus.CREATOR and not getattr(actor_member, "can_restrict_members", False):
+            await message.answer("⛔ You need Telegram's Ban Users permission.")
+            return
+        if me.status != ChatMemberStatus.CREATOR and (me.status != ChatMemberStatus.ADMINISTRATOR or not getattr(me, "can_restrict_members", False)):
+            await message.answer("I need Telegram's Ban Users permission in this group.")
+            return
+    except (TelegramBadRequest, TelegramForbiddenError) as exc:
+        await message.answer(f"Telegram could not verify permissions: {str(exc)[:180]}")
+        return
+
+    target = message.reply_to_message.from_user if message.reply_to_message else None
+    raw_parts = _args(message).split(maxsplit=1)
+    if target is None and raw_parts and raw_parts[0].isdigit():
+        target = User(id=int(raw_parts[0]), is_bot=False, first_name=f"User {raw_parts[0]}")
+    if target is None:
+        await message.answer("Reply to a member or provide a numeric Telegram USER_ID.")
+        return
+    if target.is_bot or target.id == actor.id:
+        await message.answer("⛔ This target cannot be federation-moderated.")
+        return
+    reason = raw_parts[1] if len(raw_parts) > 1 else ""
+    from app.db.models import FederationGroup
+    from app.services.federations import (
+        federation_for_group, federation_members, record_federation_ban,
+        remove_federation_ban,
+    )
+    async with database.sessions() as session:
+        async with session.begin():
+            federation = await federation_for_group(session, message.chat.id)
+            if federation is None:
+                await message.answer("This group has not opted into a federation. Use /fed join ID first.")
+                return
+            federation_id = federation.id
+            members = await federation_members(session, federation_id)
+            if revoke:
+                found = await remove_federation_ban(session, federation_id=federation_id, user_id=target.id)
+            else:
+                await record_federation_ban(session, federation_id=federation_id, user_id=target.id,
+                                            actor_chat_id=message.chat.id, actor_id=actor.id, reason=reason)
+                found = True
+    if revoke and not found:
+        await message.answer("No federation ban record exists for this user.")
+        return
+
+    applied, skipped, failed = [], [], []
+    for chat_id in members:
+        try:
+            bot_member = await bot.get_chat_member(chat_id, (await bot.get_me()).id)
+            if bot_member.status != ChatMemberStatus.CREATOR and (
+                bot_member.status != ChatMemberStatus.ADMINISTRATOR
+                or not getattr(bot_member, "can_restrict_members", False)
+            ):
+                skipped.append(f"{chat_id}: bot lacks Ban Users permission")
+                continue
+            try:
+                target_member = await bot.get_chat_member(chat_id, target.id)
+                if target_member.status in (ChatMemberStatus.CREATOR, ChatMemberStatus.ADMINISTRATOR):
+                    skipped.append(f"{chat_id}: target is an administrator")
+                    continue
+            except TelegramBadRequest:
+                # Not being a current member is normal for a ban by numeric ID.
+                pass
+            if revoke:
+                await bot.unban_chat_member(chat_id, target.id, only_if_banned=True)
+            else:
+                await bot.ban_chat_member(chat_id, target.id)
+            applied.append(str(chat_id))
+        except (TelegramBadRequest, TelegramForbiddenError) as exc:
+            failed.append(f"{chat_id}: {str(exc)[:100]}")
+    action = "Unban" if revoke else "Ban"
+    await message.answer(
+        f"<b>Federation {action}</b> for user <code>{target.id}</code>\n"
+        f"Successful: {len(applied)}/{len(members)}\n"
+        + ("Applied in: " + ", ".join(applied[:15]) + "\n" if applied else "")
+        + ("Skipped: " + "; ".join(skipped[:5]) + "\n" if skipped else "")
+        + ("Failed: " + "; ".join(failed[:5]) if failed else "")
+        + ("\nLedger updated; retry the command after fixing group permissions." if failed or skipped else "")
+    )
+
+
+@router.message(Command("fban"))
+async def federation_ban_command(message: Message, bot: Bot, database: Database):
+    await _federation_moderation(message, bot, database, revoke=False)
+
+
+@router.message(Command("funban"))
+async def federation_unban_command(message: Message, bot: Bot, database: Database):
+    await _federation_moderation(message, bot, database, revoke=True)
+
+
 @router.message(Command("privacy"))
 async def privacy_command(message: Message, database: Database):
     if message.chat.type not in GROUP_TYPES or not message.from_user:
