@@ -155,3 +155,25 @@ def test_captcha_challenges_are_persisted_and_group_scoped():
                 assert other == []
         await db.close()
     asyncio.run(scenario())
+
+
+
+def test_update_claim_is_exclusive_and_released_after_handler_failure():
+    async def scenario():
+        from app.db.repositories import claim_update, release_update_claim
+        db = Database("sqlite+aiosqlite:///:memory:")
+        await db.create_schema()
+        async with db.sessions() as session:
+            async with session.begin():
+                assert await claim_update(session, 12001, "owner-a", lease_seconds=300) is True
+        async with db.sessions() as session:
+            async with session.begin():
+                assert await claim_update(session, 12001, "owner-b", lease_seconds=300) is False
+        async with db.sessions() as session:
+            async with session.begin():
+                await release_update_claim(session, 12001, "owner-a")
+        async with db.sessions() as session:
+            async with session.begin():
+                assert await claim_update(session, 12001, "owner-b", lease_seconds=300) is True
+        await db.close()
+    asyncio.run(scenario())
