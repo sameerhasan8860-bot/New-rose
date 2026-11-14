@@ -17,7 +17,7 @@ Full command extraction remains IN PROGRESS; do not claim full Rose parity from 
 | Moderation, reports, notes, filters, greetings, locks, blocklist | IMPLEMENTED; automated coverage partial | See command_catalog.md |
 | CAPTCHA, antiraid alerts, forum topics | IMPLEMENTED; live Telegram verification pending | Antiraid join windows and alert claims are persisted across workers; CAPTCHA stores/restores member permissions when available; CI #192 passed |
 | Import/export | IMPLEMENTED; CI test pending | Versioned JSON; allowlisted group settings only |
-| Federation membership | IMPLEMENTED; tests added | Create/join/leave/info with per-group admin consent; no cross-group enforcement/ban propagation yet |
+| Federation membership and basic ban propagation | IMPLEMENTED; automated tests for ledger | Create/join/leave/info plus /fban and /funban; only explicitly opted-in groups; checks bot Ban Users rights per destination; protects target admins; keeps ban ledger until every unban succeeds. No durable retry queue, federation roles, banlist/log/subscription management or private-group connections |
 | Privacy | IMPLEMENTED; tests added | Self-service erasure of this user's records in the current group only; Telegram messages and other groups unaffected |
 | Cleaning/formatting | IMPLEMENTED; formatting tests added | /clean bounded to 20 messages and permission-gated; /format escapes HTML |
 | Bot-to-bot safeguards | BASELINE PROTECTION TESTED; advanced parity PARTIAL | Router rejects bot-authored messages and callbacks by default; anonymous sender identities fail closed. No admin/all mode or approval-review workflow; this is intentionally safer than enabling bot commands without review |
@@ -50,7 +50,7 @@ The following official pages were inspected for command semantics. This is a bou
 | https://missrose.org/docs/moderation/admins/ | admin permission mapping, promotion/demotion, anonymous admin verification | Partial: live group-admin verification exists; permission-specific command gates are inconsistent and anonymous admin verification is not implemented |
 | https://missrose.org/docs/moderation/disabling/ | disabled, disableable, disable, enable, disableadmin, disabledel | Not implemented |
 | https://missrose.org/docs/connections/ and https://missrose.org/docs/basics/connections/ | connect, disconnect, connection, reconnect; one active group and recent connection history | Not implemented |
-| https://missrose.org/docs/federations/ and /docs/federations/creating/ | federation ownership, create/rename/delete, group opt-in | Partial: basic group-consented membership only |
+| https://missrose.org/docs/federations/ and /docs/federations/creating/ | federation ownership, create/rename/delete, group opt-in | Partial: basic group-consented membership, plus basic /fban and /funban enforcement |
 | https://missrose.org/docs/federations/fedbans/ and /docs/federations/managing/ | fban/unfban, fed admin roles, fed reasons/logs, banlist, subscriptions | Not implemented beyond schema groundwork; no cross-group ban enforcement |
 | https://missrose.org/docs/advanced/bot-to-bot/ | off/admin/all modes and command review before bot admin actions | Not implemented; MASTER X fails closed and rejects bot-authored updates by default |
 
