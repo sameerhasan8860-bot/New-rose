@@ -9,7 +9,7 @@ from aiogram.types import ChatPermissions, Message, User
 from sqlalchemy import func, select
 
 from app.db.engine import Database
-from app.db.models import Group, ModerationAction, WarningRecord
+from app.db.models import Group, ModerationAction, ReportRecord, WarningRecord
 from app.services.authorization import has_group_admin_rights
 
 router = Router(name="core")
@@ -255,3 +255,95 @@ async def warnings(message: Message, bot: Bot, database: Database):
         return
     details = "\n".join(f"• {row.reason[:120]}" for row in rows)
     await message.answer(f"⚠️ <b>{target.full_name}</b> — {count} warning(s) in this group\n{details}")
+
+
+@router.message(Command("report"))
+async def report_message(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES:
+        await message.answer("Use /report as a reply inside the group.")
+        return
+    reporter = message.from_user
+    target_message = message.reply_to_message
+    if reporter is None or target_message is None or target_message.from_user is None:
+        await message.answer("Reply to the message you want to report, then send /report [reason].")
+        return
+    target = target_message.from_user
+    if target.is_bot or target.id == reporter.id:
+        await message.answer("That message cannot be reported.")
+        return
+    reason = _args(message)[:1000] or "No reason provided"
+    async with database.sessions() as session:
+        async with session.begin():
+            group = await session.get(Group, message.chat.id)
+            if group is None:
+                session.add(Group(chat_id=message.chat.id, title=message.chat.title or ""))
+                await session.flush()
+            record = ReportRecord(
+                chat_id=message.chat.id, reporter_id=reporter.id, target_id=target.id,
+                message_id=target_message.message_id, reason=reason, status="open",
+            )
+            session.add(record)
+            await session.flush()
+            report_id = record.id
+    notified = 0
+    try:
+        admins = await bot.get_chat_administrators(message.chat.id)
+        for admin in admins:
+            if admin.user.is_bot:
+                continue
+            try:
+                await bot.send_message(
+                    admin.user.id,
+                    f"🚩 <b>Group report #{report_id}</b>\nGroup: {message.chat.title or message.chat.id}\n"
+                    f"Reporter: <code>{reporter.id}</code>\nReported user: <code>{target.id}</code>\n"
+                    f"Reason: {reason[:500]}",
+                )
+                notified += 1
+            except (TelegramBadRequest, TelegramForbiddenError):
+                continue
+    except (TelegramBadRequest, TelegramForbiddenError):
+        pass
+    await message.answer(f"🚩 Report #{report_id} saved for this group. Notified {notified} admin(s).")
+
+
+@router.message(Command("reports"))
+async def list_reports(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can review reports in their group.")
+        return
+    async with database.sessions() as session:
+        rows = (await session.scalars(
+            select(ReportRecord).where(
+                ReportRecord.chat_id == message.chat.id, ReportRecord.status == "open"
+            ).order_by(ReportRecord.created_at.desc()).limit(10)
+        )).all()
+    if not rows:
+        await message.answer("✅ There are no open reports in this group.")
+        return
+    lines = [
+        f"#{row.id} · user <code>{row.target_id}</code> · reporter <code>{row.reporter_id}</code>\n"
+        f"Message <code>{row.message_id}</code> · {row.reason[:140]}"
+        for row in rows
+    ]
+    await message.answer("🚩 <b>Open reports — this group</b>\n" + "\n\n".join(lines))
+
+
+@router.message(Command("adminlog"))
+async def admin_log(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can view this group's admin log.")
+        return
+    async with database.sessions() as session:
+        rows = (await session.scalars(
+            select(ModerationAction).where(ModerationAction.chat_id == message.chat.id)
+            .order_by(ModerationAction.created_at.desc()).limit(10)
+        )).all()
+    if not rows:
+        await message.answer("No moderation actions have been recorded in this group yet.")
+        return
+    lines = [
+        f"#{row.id} · <b>{row.action}</b> · actor <code>{row.actor_id}</code> → target <code>{row.target_id}</code>\n"
+        f"{row.reason[:120]}"
+        for row in rows
+    ]
+    await message.answer("📋 <b>Recent admin actions — this group</b>\n" + "\n\n".join(lines))
