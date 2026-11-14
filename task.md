@@ -21,9 +21,9 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [ ] CI evidence: migration + all tests pass on latest commit
 - [ ] PostgreSQL integration and concurrency tests
 
-## Phase 3 — Rose compatibility
+## Phase 3 — Rose compatibility (IN PROGRESS)
 - [ ] Build command catalogue from official docs
-- [ ] Moderation, warnings, reports, admin logs
+- [x] Core moderation commands: ban, unban, kick, mute, unmute, warn, warnings (group-admin gated; replied-to targets; action audit log)\n- [ ] Reports and admin-log browsing
 - [ ] Greetings, notes, filters, locks, blocklists, CAPTCHA, antiflood, antiraid
 - [ ] Federations, connections, topics, privacy, cleaning, formatting, import/export, bot-to-bot safeguards
 
