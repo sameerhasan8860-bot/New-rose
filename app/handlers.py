@@ -1118,7 +1118,8 @@ async def _federation_moderation(message: Message, bot: Bot, database: Database,
             federation_id = federation.id
             members = await federation_members(session, federation_id)
             if revoke:
-                found = await remove_federation_ban(session, federation_id=federation_id, user_id=target.id)
+                from app.services.federations import federation_ban_exists
+                found = await federation_ban_exists(session, federation_id=federation_id, user_id=target.id)
             else:
                 await record_federation_ban(session, federation_id=federation_id, user_id=target.id,
                                             actor_chat_id=message.chat.id, actor_id=actor.id, reason=reason)
@@ -1152,6 +1153,10 @@ async def _federation_moderation(message: Message, bot: Bot, database: Database,
             applied.append(str(chat_id))
         except (TelegramBadRequest, TelegramForbiddenError) as exc:
             failed.append(f"{chat_id}: {str(exc)[:100]}")
+    if revoke and not failed and not skipped:
+        async with database.sessions() as session:
+            async with session.begin():
+                await remove_federation_ban(session, federation_id=federation_id, user_id=target.id)
     action = "Unban" if revoke else "Ban"
     await message.answer(
         f"<b>Federation {action}</b> for user <code>{target.id}</code>\n"
