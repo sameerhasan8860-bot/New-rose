@@ -27,7 +27,9 @@ This catalogue lists handlers that exist in the current repository. Commands are
 | /filter keyword => response | Group | Create/update a keyword-triggered automatic response | Group admin |
 | /stop KEYWORD | Group | Remove a keyword filter | Group admin |
 | /filters | Group | List keyword filters | Group member |
+| /welcome on/off | Group | Enable or disable new-member welcome messages | Group admin |
+| /setwelcome TEXT | Group | Set welcome template; supports {first}, {name}, {id}, {mention} | Group admin |
 
-Not yet implemented: welcome/goodbye, locks, blocklists, CAPTCHA, antiflood, antiraid, federations, connections, topics, privacy, cleaning, formatting, import/export, and bot-to-bot safeguards. Notes and keyword filters are implemented in the current build. Do not advertise these as working.
+Not yet implemented: goodbye, locks, blocklists, CAPTCHA, antiflood, antiraid, federations, connections, topics, privacy, cleaning, formatting, import/export, and bot-to-bot safeguards. Notes, keyword filters, and configurable new-member welcome messages are implemented in the current build. Do not advertise these as working.
 
 Authorization is always checked server-side. Report and admin-log queries are scoped by the current chat ID.
