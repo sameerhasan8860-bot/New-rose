@@ -21,7 +21,13 @@ This catalogue lists handlers that exist in the current repository. Commands are
 | /report | Group | Reply to a message with /report [reason]; save report and attempt to notify group admins privately | Group member |
 | /reports | Group | Show latest 10 open reports for this group | Group admin |
 | /adminlog | Group | Show latest 10 recorded moderation actions for this group | Group admin |
+| /save NAME | Group | Save a replied-to text message as a group note | Group admin |
+| /get NAME | Group | Retrieve a saved note | Group member |
+| /notes | Group | List saved notes | Group member |
+| /filter keyword => response | Group | Create/update a keyword-triggered automatic response | Group admin |
+| /stop KEYWORD | Group | Remove a keyword filter | Group admin |
+| /filters | Group | List keyword filters | Group member |
 
-Not yet implemented: welcome/goodbye, notes, custom filters, locks, blocklists, CAPTCHA, antiflood, antiraid, federations, connections, topics, privacy, cleaning, formatting, import/export, and bot-to-bot safeguards. Do not advertise these as working.
+Not yet implemented: welcome/goodbye, locks, blocklists, CAPTCHA, antiflood, antiraid, federations, connections, topics, privacy, cleaning, formatting, import/export, and bot-to-bot safeguards. Notes and keyword filters are implemented in the current build. Do not advertise these as working.
 
 Authorization is always checked server-side. Report and admin-log queries are scoped by the current chat ID.
