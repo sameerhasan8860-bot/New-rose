@@ -1,4 +1,5 @@
 import asyncio
+import json
 from datetime import datetime, timezone
 
 from aiogram import Bot
@@ -21,13 +22,15 @@ async def captcha_expiry_worker(bot: Bot, database: Database) -> None:
                     CaptchaChallenge.expires_at < now,
                 ).limit(100)
             )).all()
-            expired = [(row.id, row.chat_id, row.user_id) for row in rows]
-        for challenge_id, chat_id, user_id in expired:
+            expired = [(row.id, row.chat_id, row.user_id, row.previous_permissions_json) for row in rows]
+        for challenge_id, chat_id, user_id, previous_permissions_json in expired:
             try:
                 chat = await bot.get_chat(chat_id)
-                if chat.permissions is None:
+                permissions = json.loads(previous_permissions_json) if previous_permissions_json else (chat.permissions.model_dump(exclude_none=True) if chat.permissions else None)
+                if permissions is None:
                     continue
-                await bot.restrict_chat_member(chat_id, user_id, permissions=chat.permissions)
+                from aiogram.types import ChatPermissions
+                await bot.restrict_chat_member(chat_id, user_id, permissions=ChatPermissions(**permissions))
             except (TelegramBadRequest, TelegramForbiddenError):
                 continue
             async with database.sessions() as session:
