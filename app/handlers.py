@@ -165,8 +165,10 @@ async def _apply_restriction(message: Message, bot: Bot, database: Database, act
             )
         elif action == "unmute":
             chat = await bot.get_chat(message.chat.id)
-            defaults = chat.permissions or ChatPermissions(can_send_messages=True, can_send_audios=True, can_send_documents=True, can_send_photos=True, can_send_videos=True, can_send_video_notes=True, can_send_voice_notes=True, can_send_polls=True, can_send_other_messages=True, can_add_web_page_previews=True, can_change_info=True, can_invite_users=True, can_pin_messages=True, can_manage_topics=True)
-            await bot.restrict_chat_member(message.chat.id, target.id, permissions=defaults)
+            if chat.permissions is None:
+                await message.answer("I cannot safely determine this group's default permissions, so I did not unmute the member.")
+                return
+            await bot.restrict_chat_member(message.chat.id, target.id, permissions=chat.permissions)
     except (TelegramBadRequest, TelegramForbiddenError) as exc:
         await message.answer(f"Telegram rejected the action: {str(exc)[:250]}")
         return
@@ -747,3 +749,43 @@ async def antiflood_toggle(message: Message, bot: Bot, database: Database):
         async with session.begin():
             await repo.set_setting(session, message.chat.id, "antiflood_enabled", value == "on")
     await message.answer(f"🌊 Antiflood turned {value}.")
+
+
+@router.message(Command("closereport"))
+async def close_report(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can close reports.")
+        return
+    raw_id = _args(message).split(maxsplit=1)[0] if _args(message) else ""
+    if not raw_id.isdigit():
+        await message.answer("Usage: /closereport REPORT_ID")
+        return
+    async with database.sessions() as session:
+        async with session.begin():
+            row = await session.get(ReportRecord, int(raw_id))
+            if row is None or row.chat_id != message.chat.id:
+                await message.answer("Report not found in this group.")
+                return
+            if row.status != "open":
+                await message.answer("This report is already closed.")
+                return
+            row.status = "closed"
+    await message.answer(f"✅ Report #{raw_id} closed for this group.")
+
+
+@router.message(Command("resetwarnings"))
+async def reset_warnings(message: Message, bot: Bot, database: Database):
+    context = await _moderation_context(message, bot, require_bot_restrict=False)
+    if not context:
+        return
+    actor, target = context
+    async with database.sessions() as session:
+        async with session.begin():
+            from sqlalchemy import delete
+            result = await session.execute(delete(WarningRecord).where(
+                WarningRecord.chat_id == message.chat.id,
+                WarningRecord.user_id == target.id,
+            ))
+            removed = result.rowcount or 0
+            session.add(ModerationAction(chat_id=message.chat.id, actor_id=actor.id, target_id=target.id, action="resetwarnings", reason=""))
+    await message.answer(f"🧹 Removed {removed} warning(s) for {target.full_name} in this group.")
