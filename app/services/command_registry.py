@@ -56,6 +56,8 @@ _REPORTING = (
     CommandSpec("captcha", "Enable or disable new-member CAPTCHA", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("antiraid", "Enable or disable join-spike alerts", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("topic", "Create, close, reopen, or delete forum topics", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("export", "Export allowlisted settings for this group", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("import", "Import a validated group settings export", AccessLevel.GROUP_ADMIN, True),
 )
 COMMANDS = _CORE + _MODERATION + _REPORTING
 COMMAND_MAP = {item.name: item for item in COMMANDS}
