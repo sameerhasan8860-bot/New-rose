@@ -18,8 +18,9 @@ Sources: https://grouphelp.me/en and https://grouphelp.me/en/pricing
 Initial status: NOT STARTED. Do not infer undocumented command syntax.
 
 ## Iris
-No authoritative Iris developer documentation or complete public command catalogue was verified during this initial research. Third-party descriptions mention moderation, member ratings, games, and statistics, but this is not sufficient to claim exact feature parity.
-Initial status: RESEARCH REQUIRED.
+The official Iris project site (iris-tg.ru) identifies these feature families: moderation commands, moderator topics, warnings, user profiles/questionnaires, chat statistics, reputation, bookmarks, catalogue, rewards, map, virtual economy, and group-representative/userbot integrations. The official support/help channel @irissup also documents anti-scam/spammer/new-account notifications, configurable filters, and trigger rules. Exact command syntax and access conditions must be extracted from the official command reference before implementation; some Iris features are ecosystem-specific and may not map to Telegram Bot API.
+Sources: https://iris-tg.ru/ ; https://t.me/irissup
+Initial status: RESEARCH IN PROGRESS. Feature families are verified at a high level; command-level parity is not yet verified.
 
 ## Combot
 Official product page verifies analytics, moderation/filtering, spam/flood protection, scheduled announcements, trigger system, reputation, and CAS anti-spam. Current official site content may evolve; paid/free availability and API access must be checked before designing dependencies.
