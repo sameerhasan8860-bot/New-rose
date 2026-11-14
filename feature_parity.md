@@ -17,6 +17,7 @@ Full command extraction remains IN PROGRESS; do not claim full Rose parity from 
 | Moderation, reports, notes, filters, greetings, locks, blocklist | IMPLEMENTED; automated coverage partial | See command_catalog.md |
 | CAPTCHA, antiraid alerts, forum topics | IMPLEMENTED; live Telegram verification pending | Antiraid join windows and alert claims are persisted across workers; CAPTCHA stores/restores member permissions when available; CI #192 passed |
 | Import/export | IMPLEMENTED; CI test pending | Versioned JSON; allowlisted group settings only |
+| Command disabling | IMPLEMENTED; new middleware and permission tests pending CI | `/disable`, `/enable`, `/disabled`, `/disableadmin`; group-scoped; admin bypass by default; recovery commands cannot be disabled |
 | Federation membership and basic ban propagation | IMPLEMENTED; automated tests for ledger | Create/join/leave/info plus /fban and /funban; only explicitly opted-in groups; checks bot Ban Users rights per destination; protects target admins; keeps ban ledger until every unban succeeds. No durable retry queue, federation roles, banlist/log/subscription management or private-group connections |
 | Privacy | IMPLEMENTED; tests added | Self-service erasure of this user's records in the current group only; Telegram messages and other groups unaffected |
 | Cleaning/formatting | IMPLEMENTED; formatting tests added | /clean bounded to 20 messages and permission-gated; /format escapes HTML |
@@ -48,7 +49,7 @@ The following official pages were inspected for command semantics. This is a bou
 | https://missrose.org/docs/basics/command-usage/ | on/off aliases; duration syntax | Partial: current toggles accept on/off; durations use s/m/h/d, not Rose's full documented syntax |
 | https://missrose.org/docs/moderation/restrictions/ | ban, tban, dban, sban; mute, tmute, dmute, smute; kick, dkick, skick; unban, unmute | Partial: ban/unban/kick/mute/unmute plus /tban and /tmute exist; delete/silent variants and username target parsing are missing |
 | https://missrose.org/docs/moderation/admins/ | admin permission mapping, promotion/demotion, anonymous admin verification | Partial: live group-admin verification exists; permission-specific command gates are inconsistent and anonymous admin verification is not implemented |
-| https://missrose.org/docs/moderation/disabling/ | disabled, disableable, disable, enable, disableadmin, disabledel | Not implemented |
+| https://missrose.org/docs/moderation/disabling/ | disabled, disableable, disable, enable, disableadmin, disabledel | Partial: /disable, /enable, /disabled and /disableadmin implemented; /disableable and /disabledel still missing |
 | https://missrose.org/docs/connections/ and https://missrose.org/docs/basics/connections/ | connect, disconnect, connection, reconnect; one active group and recent connection history | Not implemented |
 | https://missrose.org/docs/federations/ and /docs/federations/creating/ | federation ownership, create/rename/delete, group opt-in | Partial: basic group-consented membership, plus basic /fban and /funban enforcement |
 | https://missrose.org/docs/federations/fedbans/ and /docs/federations/managing/ | fban/unfban, fed admin roles, fed reasons/logs, banlist, subscriptions | Not implemented beyond schema groundwork; no cross-group ban enforcement |
