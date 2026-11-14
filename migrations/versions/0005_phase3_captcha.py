@@ -15,6 +15,7 @@ def upgrade() -> None:
         sa.Column("chat_id", sa.BigInteger(), sa.ForeignKey("groups.chat_id", ondelete="CASCADE"), nullable=False),
         sa.Column("user_id", sa.BigInteger(), nullable=False),
         sa.Column("answer", sa.Integer(), nullable=False),
+        sa.Column("choices_json", sa.Text(), nullable=False),
         sa.Column("status", sa.String(16), nullable=False, server_default="pending"),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
