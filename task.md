@@ -30,7 +30,10 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [x] Group-scoped keyword filters: /filter, /stop, /filters
 - [x] Configurable new-member welcome messages and templates
 - [x] Bounded /purge command (1–100 messages; admin and bot delete permission required)
+- [x] Group category locks for links, photos, videos, documents, stickers, and media
+- [x] Group-scoped blocked terms with automatic matching-message deletion
+- [x] Configurable goodbye messages
 - [ ] Mocked Telegram API tests for moderation and reporting authorization paths
-- [ ] Greetings, notes, filters, locks, blocklists, CAPTCHA, antiflood, antiraid
+- [ ] CAPTCHA, antiflood, antiraid
 - [ ] Federations, connections, topics, privacy, cleaning, formatting, import/export, bot-to-bot safeguards
 - [ ] PostgreSQL integration, retry-safe update processing, and live test-group verification
