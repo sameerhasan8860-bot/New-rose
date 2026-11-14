@@ -691,3 +691,26 @@ async def goodbye_member(event: ChatMemberUpdated, bot: Bot, database: Database)
     if enabled:
         import html
         await bot.send_message(event.chat.id, f"👋 {html.escape(user.full_name)} left the group.")
+
+
+@router.message(F.photo | F.video | F.document | F.sticker | F.animation | F.voice | F.audio | F.video_note)
+async def enforce_media_locks(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or message.from_user.is_bot:
+        return
+    if await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        return
+    repo = GroupRepository()
+    async with database.sessions() as session:
+        locks = await repo.get_setting(session, message.chat.id, "locks", [])
+    locked = (
+        ("photos" in locks and bool(message.photo))
+        or ("videos" in locks and bool(message.video or message.video_note or message.animation))
+        or ("documents" in locks and bool(message.document or message.audio or message.voice))
+        or ("stickers" in locks and bool(message.sticker))
+        or ("media" in locks)
+    )
+    if locked:
+        try:
+            await bot.delete_message(message.chat.id, message.message_id)
+        except (TelegramBadRequest, TelegramForbiddenError):
+            pass
