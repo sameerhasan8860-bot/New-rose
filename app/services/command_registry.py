@@ -44,6 +44,7 @@ _REPORTING = (
     CommandSpec("filters", "List group keyword filters", AccessLevel.EVERYONE, True),
     CommandSpec("welcome", "Enable or disable welcome messages", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("setwelcome", "Set the welcome message template", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("purge", "Delete up to 100 messages from a replied-to message onward", AccessLevel.GROUP_ADMIN, True),
 )
 COMMANDS = _CORE + _MODERATION + _REPORTING
 COMMAND_MAP = {item.name: item for item in COMMANDS}
