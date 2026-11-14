@@ -66,7 +66,6 @@ _REPORTING = (
 _PHASE3_EXTRA = tuple(CommandSpec(name, description, AccessLevel.GROUP_ADMIN, True) for name, description in (
     ("tban", "Temporarily ban a replied-to member"),
     ("tmute", "Temporarily mute a replied-to member"),
-    ("setgoodbye", "Set the group goodbye template"),
     ("blocklist", "Manage blocked terms"),
     ("closereport", "Close a group report"),
     ("resetwarnings", "Reset a member's warnings"),
@@ -82,7 +81,6 @@ _PHASE3_EXTRA = tuple(CommandSpec(name, description, AccessLevel.GROUP_ADMIN, Tr
     ("disableadmin", "Choose whether disabled commands affect admins"),
     ("goodbye", "Configure goodbye messages"),
     ("antiflood", "Configure flood protection"),
-    ("blocklist", "Manage blocked terms"),
     ("export", "Export this group's supported settings"),
     ("import", "Import supported group settings"),
 ))
