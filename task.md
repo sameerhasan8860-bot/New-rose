@@ -39,6 +39,6 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [x] Opt-in persistent join CAPTCHA with per-group challenges and callback ownership checks
 - [x] Conservative opt-in antiraid join-spike alerts (5 joins / 30 seconds; alert-only, in-process window)
 - [ ] Federations, connections, topics, privacy, cleaning, formatting, import/export, bot-to-bot safeguards
-- [ ] PostgreSQL integration and concurrent duplicate-delivery claim/lease tests
+- [x] PostgreSQL integration and concurrent duplicate-delivery claim/lease tests (atomic SQLite/PostgreSQL upsert claim; final CI verification pending)
 - [x] Failed handlers no longer permanently consume update IDs (post-success persistence; concurrent exactly-once still pending)
 - [ ] Live Telegram test-group verification
