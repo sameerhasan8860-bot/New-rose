@@ -38,6 +38,8 @@ This catalogue lists handlers that exist in the current repository. Commands are
 | /blocklist | Group | List blocked terms | Group member |
 | /goodbye on/off | Group | Enable or disable member-leave notices | Group admin |
 | /antiflood on/off | Group | Delete the 6th text message within 8 seconds from a user | Group admin |
+| /closereport REPORT_ID | Group | Close an open report belonging to this group | Group admin |
+| /resetwarnings | Group | Clear warnings for the replied-to member and record an audit action | Group admin |
 
 Not yet implemented: CAPTCHA, antiraid, federations, connections, topics, privacy, cleaning, formatting, import/export, and bot-to-bot safeguards. Notes, keyword filters, configurable welcome/goodbye messages, category locks, group-scoped blocked terms, and basic in-process text antiflood are implemented in the current build. Do not advertise these as working.
 
