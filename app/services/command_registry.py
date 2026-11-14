@@ -51,6 +51,8 @@ _REPORTING = (
     CommandSpec("blocklist", "Manage group blocked terms", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("goodbye", "Enable or disable leave messages", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("antiflood", "Enable or disable text flood protection", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("closereport", "Close a report in this group", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("resetwarnings", "Clear warnings for a replied-to member", AccessLevel.GROUP_ADMIN, True),
 )
 COMMANDS = _CORE + _MODERATION + _REPORTING
 COMMAND_MAP = {item.name: item for item in COMMANDS}
