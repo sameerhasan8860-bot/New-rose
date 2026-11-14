@@ -41,7 +41,8 @@ This catalogue lists handlers that exist in the current repository. Commands are
 | /closereport REPORT_ID | Group | Close an open report belonging to this group | Group admin |
 | /resetwarnings | Group | Clear warnings for the replied-to member and record an audit action | Group admin |
 | /captcha on/off | Group | Restrict new non-admin members until they pass a persisted 5-minute arithmetic challenge | Group admin |
+| /antiraid on/off | Group | Alert admins after 5 joins in 30 seconds; no automatic bans | Group admin |
 
-Not yet implemented: antiraid, federations, connections, topics, privacy, cleaning, formatting, import/export, and bot-to-bot safeguards. Notes, keyword filters, configurable welcome/goodbye messages, category locks, group-scoped blocked terms, and basic in-process text antiflood, and opt-in join CAPTCHA are implemented in the current build. Do not advertise these as working.
+Not yet implemented: federations, federations, connections, topics, privacy, cleaning, formatting, import/export, and bot-to-bot safeguards. Notes, keyword filters, configurable welcome/goodbye messages, category locks, group-scoped blocked terms, and basic in-process text antiflood, and opt-in join CAPTCHA and conservative join-spike alerts are implemented in the current build. Do not advertise these as working.
 
 Authorization is always checked server-side. Report and admin-log queries are scoped by the current chat ID.
