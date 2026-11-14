@@ -41,7 +41,7 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [x] Opt-in antiraid alerts (5 joins / 30 seconds; persisted cross-worker event window and atomic alert deduplication; alert-only)
 - [x] Forum topic create/close/reopen/delete with Telegram Manage Topics permission checks
 - [x] Group-scoped /export and /import for allowlisted settings with strict schema validation
-- [ ] Full federations/connections and cross-group moderation parity (consented membership plus /fban and /funban ledger/application now exist; per-target-group bot permission checks are enforced, but owner/admin roles, reasons/logs/banlist/subscriptions, durable retry queue, and private-group connections remain)
+- [ ] Full federations/connections and cross-group moderation parity (consented membership plus /fban and /funban ledger/application now exist; per-target-group bot permission checks are enforced; owner-group rename/delete is implemented and tested (CI #231: 57 passed), but federation admin roles, durable retry queue, banlist/log/subscriptions, and private-group connections remain)
 - [x] Group-scoped self-service privacy disclosure and erasure for warnings, reports, moderation actions, notes, filters, blocked terms, and CAPTCHA challenges
 - [x] Bounded /clean (1–20 recent messages; actor and bot delete permissions required) and safe escaped /format helpers (bold, italic, code, quote)
 - [ ] Full Rose-style bot-to-bot modes and admin review workflow (baseline security implemented: router rejects bot-authored messages/callbacks by default and fails closed for anonymous sender identities; bots cannot execute commands; configurable admin/all modes and review approvals are not implemented)
