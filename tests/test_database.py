@@ -134,3 +134,24 @@ def test_update_middleware_does_not_mark_failed_handler_as_processed():
         assert calls["count"] == 2
         await db.close()
     asyncio.run(scenario())
+
+
+def test_captcha_challenges_are_persisted_and_group_scoped():
+    async def scenario():
+        from datetime import datetime, timedelta, timezone
+        from app.db.models import CaptchaChallenge, Group
+        from sqlalchemy import select
+        db = Database("sqlite+aiosqlite:///:memory:")
+        await db.create_schema()
+        async with db.sessions() as session:
+            async with session.begin():
+                session.add_all([Group(chat_id=-4101, title="A"), Group(chat_id=-4102, title="B")])
+            async with session.begin():
+                session.add(CaptchaChallenge(chat_id=-4101, user_id=91, answer=7, expires_at=datetime.now(timezone.utc) + timedelta(minutes=5)))
+            async with db.sessions() as check:
+                rows = (await check.scalars(select(CaptchaChallenge).where(CaptchaChallenge.chat_id == -4101))).all()
+                other = (await check.scalars(select(CaptchaChallenge).where(CaptchaChallenge.chat_id == -4102))).all()
+                assert len(rows) == 1 and rows[0].answer == 7 and rows[0].status == "pending"
+                assert other == []
+        await db.close()
+    asyncio.run(scenario())
