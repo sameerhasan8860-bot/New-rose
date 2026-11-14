@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timedelta, timezone
 
-from aiogram import Bot, Router
+from aiogram import Bot, F, Router
 from aiogram.enums import ChatMemberStatus, ChatType
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.filters import Command
@@ -9,7 +9,7 @@ from aiogram.types import ChatPermissions, Message, User
 from sqlalchemy import func, select
 
 from app.db.engine import Database
-from app.db.models import Group, ModerationAction, ReportRecord, WarningRecord
+from app.db.models import Group, GroupFilter, ModerationAction, Note, ReportRecord, WarningRecord
 from app.services.authorization import has_group_admin_rights
 
 router = Router(name="core")
@@ -347,3 +347,125 @@ async def admin_log(message: Message, bot: Bot, database: Database):
         for row in rows
     ]
     await message.answer("📋 <b>Recent admin actions — this group</b>\n" + "\n\n".join(lines))
+
+
+def _valid_group_admin_context(message: Message, bot: Bot) -> bool:
+    return message.chat.type in GROUP_TYPES and message.from_user is not None
+
+
+@router.message(Command("save"))
+async def save_note(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can save notes.")
+        return
+    name = _args(message).split(maxsplit=1)[0].lower() if _args(message) else ""
+    source = message.reply_to_message
+    if not name or not re.fullmatch(r"[a-z0-9_-]{1,64}", name) or source is None or not (source.text or source.caption):
+        await message.answer("Reply to a text message: /save NAME")
+        return
+    body = source.text or source.caption or ""
+    async with database.sessions() as session:
+        async with session.begin():
+            group = await session.get(Group, message.chat.id)
+            if group is None:
+                session.add(Group(chat_id=message.chat.id, title=message.chat.title or ""))
+                await session.flush()
+            row = (await session.scalars(select(Note).where(Note.chat_id == message.chat.id, Note.name == name))).first()
+            if row:
+                row.content, row.creator_id = body[:4000], message.from_user.id
+            else:
+                session.add(Note(chat_id=message.chat.id, name=name, content=body[:4000], creator_id=message.from_user.id))
+    await message.answer(f"✅ Saved group note <b>{name}</b>.")
+
+
+@router.message(Command("get"))
+async def get_note(message: Message, database: Database):
+    name = _args(message).split(maxsplit=1)[0].lower() if _args(message) else ""
+    if message.chat.type not in GROUP_TYPES or not name:
+        await message.answer("Usage inside a group: /get NAME")
+        return
+    async with database.sessions() as session:
+        row = (await session.scalars(select(Note).where(Note.chat_id == message.chat.id, Note.name == name))).first()
+    if row is None:
+        await message.answer("That note does not exist in this group.")
+        return
+    import html
+    await message.answer(f"🗒️ <b>{html.escape(name)}</b>\n{html.escape(row.content)}")
+
+
+@router.message(Command("notes"))
+async def list_notes(message: Message, database: Database):
+    if message.chat.type not in GROUP_TYPES:
+        await message.answer("Use /notes inside a group.")
+        return
+    async with database.sessions() as session:
+        rows = (await session.scalars(select(Note).where(Note.chat_id == message.chat.id).order_by(Note.name).limit(50))).all()
+    await message.answer("🗒️ Saved notes: " + (", ".join(row.name for row in rows) if rows else "none"))
+
+
+@router.message(Command("filter"))
+async def add_filter(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can manage filters.")
+        return
+    raw = _args(message)
+    if "=>" not in raw:
+        await message.answer("Usage: /filter keyword => automatic response")
+        return
+    trigger, response = (part.strip() for part in raw.split("=>", 1))
+    if not trigger or len(trigger) > 100 or not response or len(response) > 1000:
+        await message.answer("Trigger must be 1–100 characters and response 1–1000 characters.")
+        return
+    async with database.sessions() as session:
+        async with session.begin():
+            group = await session.get(Group, message.chat.id)
+            if group is None:
+                session.add(Group(chat_id=message.chat.id, title=message.chat.title or ""))
+                await session.flush()
+            row = (await session.scalars(select(GroupFilter).where(GroupFilter.chat_id == message.chat.id, GroupFilter.trigger == trigger.casefold()))).first()
+            if row:
+                row.response, row.creator_id = response, message.from_user.id
+            else:
+                session.add(GroupFilter(chat_id=message.chat.id, trigger=trigger.casefold(), response=response, creator_id=message.from_user.id))
+    await message.answer(f"✅ Filter <b>{trigger}</b> saved for this group.")
+
+
+@router.message(Command("stop"))
+async def remove_filter(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can remove filters.")
+        return
+    trigger = _args(message).casefold()
+    if not trigger:
+        await message.answer("Usage: /stop KEYWORD")
+        return
+    async with database.sessions() as session:
+        async with session.begin():
+            row = (await session.scalars(select(GroupFilter).where(GroupFilter.chat_id == message.chat.id, GroupFilter.trigger == trigger))).first()
+            if row:
+                await session.delete(row)
+    await message.answer("✅ Filter removed." if row else "No matching filter in this group.")
+
+
+@router.message(Command("filters"))
+async def list_filters(message: Message, database: Database):
+    if message.chat.type not in GROUP_TYPES:
+        await message.answer("Use /filters inside a group.")
+        return
+    async with database.sessions() as session:
+        rows = (await session.scalars(select(GroupFilter).where(GroupFilter.chat_id == message.chat.id).order_by(GroupFilter.trigger).limit(50))).all()
+    await message.answer("🔎 Group filters: " + (", ".join(row.trigger for row in rows) if rows else "none"))
+
+
+@router.message(F.text & ~F.text.startswith("/"))
+async def match_group_filter(message: Message, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.text or not message.from_user or message.from_user.is_bot:
+        return
+    async with database.sessions() as session:
+        rows = (await session.scalars(select(GroupFilter).where(GroupFilter.chat_id == message.chat.id).limit(100))).all()
+    text_value = message.text.casefold()
+    for row in rows:
+        if row.trigger in text_value:
+            import html
+            await message.answer(html.escape(row.response))
+            return
