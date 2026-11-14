@@ -2,7 +2,7 @@
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from app.db.models import Federation, FederationGroup, Group
+from app.db.models import Federation, FederationBan, FederationGroup, Group
 
 
 async def create_federation(session, *, name: str, chat_id: int, actor_id: int) -> Federation:
