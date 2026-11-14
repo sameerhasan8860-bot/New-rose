@@ -584,14 +584,16 @@ async def greet_new_member(event: ChatMemberUpdated, bot: Bot, database: Databas
             member = await bot.get_chat_member(event.chat.id, user.id)
             if member.status not in (ChatMemberStatus.CREATOR, ChatMemberStatus.ADMINISTRATOR):
                 chat = await bot.get_chat(event.chat.id)
-                if chat.permissions is not None:
+                previous_permissions = member.permissions if member.status == ChatMemberStatus.RESTRICTED else chat.permissions
+                if previous_permissions is not None:
                     a, b = random.randint(1, 9), random.randint(1, 9)
                     answer = a + b
                     choices = [answer, answer + 1, max(0, answer - 1)]
                     random.shuffle(choices)
+                    saved_permissions = previous_permissions.model_dump(exclude_none=True)
                     async with database.sessions() as session:
                         async with session.begin():
-                            challenge = CaptchaChallenge(chat_id=event.chat.id, user_id=user.id, answer=answer, choices_json=json.dumps(choices), expires_at=datetime.now(timezone.utc) + timedelta(minutes=5))
+                            challenge = CaptchaChallenge(chat_id=event.chat.id, user_id=user.id, answer=answer, choices_json=json.dumps(choices), previous_permissions_json=json.dumps(saved_permissions), expires_at=datetime.now(timezone.utc) + timedelta(minutes=5))
                             session.add(challenge)
                             await session.flush()
                             challenge_id = challenge.id
