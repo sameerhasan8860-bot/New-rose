@@ -113,6 +113,7 @@ class CaptchaChallenge(Base):
     chat_id: Mapped[int] = mapped_column(ForeignKey("groups.chat_id", ondelete="CASCADE"), nullable=False)
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     answer: Mapped[int] = mapped_column(Integer, nullable=False)
+    choices_json: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String(16), default="pending", nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
