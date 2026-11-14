@@ -45,6 +45,11 @@ _REPORTING = (
     CommandSpec("welcome", "Enable or disable welcome messages", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("setwelcome", "Set the welcome message template", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("purge", "Delete up to 100 messages from a replied-to message onward", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("lock", "Lock a message category", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("unlock", "Unlock a message category", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("locks", "List active group locks", AccessLevel.EVERYONE, True),
+    CommandSpec("blocklist", "Manage group blocked terms", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("goodbye", "Enable or disable leave messages", AccessLevel.GROUP_ADMIN, True),
 )
 COMMANDS = _CORE + _MODERATION + _REPORTING
 COMMAND_MAP = {item.name: item for item in COMMANDS}
