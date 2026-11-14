@@ -22,6 +22,10 @@ async def _moderation_context(message: Message, bot: Bot):
     if actor is None or not await has_group_admin_rights(bot, message.chat.id, actor.id):
         await message.answer("⛔ Only group administrators can use this command.")
         return None
+    actor_member = await bot.get_chat_member(message.chat.id, actor.id)
+    if actor_member.status != ChatMemberStatus.CREATOR and not getattr(actor_member, "can_restrict_members", False):
+        await message.answer("⛔ You need the Telegram 'Ban users' admin permission to moderate members.")
+        return None
     if message.reply_to_message is None or message.reply_to_message.from_user is None:
         await message.answer("Reply to the target user's message, then run this command.")
         return None
