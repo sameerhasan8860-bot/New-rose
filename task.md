@@ -40,10 +40,10 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [x] Opt-in antiraid alerts (5 joins / 30 seconds; persisted cross-worker event window and atomic alert deduplication; alert-only)
 - [x] Forum topic create/close/reopen/delete with Telegram Manage Topics permission checks
 - [x] Group-scoped /export and /import for allowlisted settings with strict schema validation
-- [x] Federation create/join/leave/info with explicit per-group admin consent and database isolation (cross-group moderation propagation intentionally remains out of scope until every target group's bot permissions can be checked live)
+- [ ] Full federations/connections and cross-group moderation propagation (basic consented membership commands exist; per-target-group bot permission checks and enforcement are not implemented)
 - [x] Group-scoped self-service privacy disclosure and erasure for warnings, reports, moderation actions, notes, filters, blocked terms, and CAPTCHA challenges
 - [x] Bounded /clean (1–20 recent messages; actor and bot delete permissions required) and safe escaped /format helpers (bold, italic, code, quote)
-- [x] Moderation rejects bot actors and bot targets; join CAPTCHA and antiraid ignore bot accounts
+- [ ] Complete bot-to-bot safeguards (partial: moderation rejects bot actors/targets and join protections ignore bots; command-wide safeguards/tests remain)
 - [x] PostgreSQL integration and concurrent duplicate-delivery claim/lease tests (CI #138 passed; CI #192 also validated all migrations on SQLite and PostgreSQL)
 - [x] Failed handlers no longer permanently consume update IDs (post-success persistence; external Telegram side effects are not exactly-once)
 - [ ] Live Telegram test-group verification
