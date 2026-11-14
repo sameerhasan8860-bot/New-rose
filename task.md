@@ -37,7 +37,7 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [x] Live group-admin authorization helper tests
 - [ ] Mocked Telegram API tests for moderation and reporting authorization paths
 - [x] Opt-in persistent join CAPTCHA with per-group challenges and callback ownership checks
-- [ ] Antiraid
+- [x] Conservative opt-in antiraid join-spike alerts (5 joins / 30 seconds; alert-only, in-process window)
 - [ ] Federations, connections, topics, privacy, cleaning, formatting, import/export, bot-to-bot safeguards
 - [ ] PostgreSQL integration and concurrent duplicate-delivery claim/lease tests
 - [x] Failed handlers no longer permanently consume update IDs (post-success persistence; concurrent exactly-once still pending)
