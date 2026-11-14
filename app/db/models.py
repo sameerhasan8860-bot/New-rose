@@ -72,3 +72,25 @@ class ReportRecord(Base):
     reason: Mapped[str] = mapped_column(Text, default="", nullable=False)
     status: Mapped[str] = mapped_column(String(16), default="open", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class Note(Base):
+    __tablename__ = "notes"
+    __table_args__ = (Index("ix_notes_chat_name", "chat_id", "name", unique=True),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    chat_id: Mapped[int] = mapped_column(ForeignKey("groups.chat_id", ondelete="CASCADE"), nullable=False)
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    creator_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class GroupFilter(Base):
+    __tablename__ = "group_filters"
+    __table_args__ = (Index("ix_filters_chat_trigger", "chat_id", "trigger", unique=True),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    chat_id: Mapped[int] = mapped_column(ForeignKey("groups.chat_id", ondelete="CASCADE"), nullable=False)
+    trigger: Mapped[str] = mapped_column(String(100), nullable=False)
+    response: Mapped[str] = mapped_column(Text, nullable=False)
+    creator_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
