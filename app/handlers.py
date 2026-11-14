@@ -68,7 +68,7 @@ def _args(message: Message) -> str:
     parts = text.split(maxsplit=1)
     return parts[1].strip() if len(parts) > 1 else ""
 
-_DURATION = re.compile(r"^(\\d+)([smhd])$", re.IGNORECASE)
+_DURATION = re.compile(r"^(\d+)([smhd])$", re.IGNORECASE)
 def _parse_duration(value: str):
     match = _DURATION.fullmatch(value)
     if not match:
