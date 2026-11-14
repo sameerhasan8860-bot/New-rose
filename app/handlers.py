@@ -173,7 +173,7 @@ async def _apply_restriction(message: Message, bot: Bot, database: Database, act
     actor, target = context
     try:
         if action in ("ban", "kick"):
-            await bot.ban_chat_member(message.chat.id, target.id)
+            await bot.ban_chat_member(message.chat.id, target.id, until_date=until_date)
             if action == "kick":
                 await bot.unban_chat_member(message.chat.id, target.id, only_if_banned=True)
         elif action == "unban":
@@ -211,6 +211,18 @@ async def ban(message: Message, bot: Bot, database: Database):
     await _apply_restriction(message, bot, database, "ban", reason=_args(message))
 
 
+@router.message(Command("tban"))
+async def timed_ban(message: Message, bot: Bot, database: Database):
+    parts = _args(message).split(maxsplit=1)
+    duration = _parse_duration(parts[0]) if parts else None
+    if duration is None:
+        await message.answer("Usage: reply to a member with /tban 10m [reason]. Units: s, m, h, d; maximum 366 days.")
+        return
+    reason = parts[1] if len(parts) > 1 else ""
+    await _apply_restriction(message, bot, database, "ban",
+                             until_date=datetime.now(timezone.utc) + duration, reason=reason)
+
+
 @router.message(Command("kick"))
 async def kick(message: Message, bot: Bot, database: Database):
     await _apply_restriction(message, bot, database, "kick", reason=_args(message))
@@ -230,6 +242,18 @@ async def mute(message: Message, bot: Bot, database: Database):
         return
     reason = parts[1] if len(parts) > 1 else ""
     await _apply_restriction(message, bot, database, "mute", until_date=datetime.now(timezone.utc) + duration, reason=reason)
+
+
+@router.message(Command("tmute"))
+async def timed_mute(message: Message, bot: Bot, database: Database):
+    parts = _args(message).split(maxsplit=1)
+    duration = _parse_duration(parts[0]) if parts else None
+    if duration is None:
+        await message.answer("Usage: reply to a member with /tmute 10m [reason]. Units: s, m, h, d; maximum 366 days.")
+        return
+    reason = parts[1] if len(parts) > 1 else ""
+    await _apply_restriction(message, bot, database, "mute",
+                             until_date=datetime.now(timezone.utc) + duration, reason=reason)
 
 
 @router.message(Command("unmute"))
