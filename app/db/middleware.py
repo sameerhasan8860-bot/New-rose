@@ -2,6 +2,7 @@ from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, Update
 from typing import Any, Awaitable, Callable
 from app.db.repositories import mark_update_processed
+from app.db.models import ProcessedUpdate
 
 
 class UpdateDeduplicationMiddleware(BaseMiddleware):
@@ -18,7 +19,7 @@ class UpdateDeduplicationMiddleware(BaseMiddleware):
         if not isinstance(event, Update):
             return await handler(event, data)
         async with self.database.sessions() as session:
-            existing = await session.get(__import__("app.db.models", fromlist=["ProcessedUpdate"]).ProcessedUpdate, event.update_id)
+            existing = await session.get(ProcessedUpdate, event.update_id)
         if existing is not None:
             return None
         result = await handler(event, data)
