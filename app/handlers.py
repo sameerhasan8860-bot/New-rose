@@ -1145,7 +1145,7 @@ async def federation_command(message: Message, bot: Bot, database: Database):
     action = parts[0].lower() if parts else "info"
     value = parts[1].strip() if len(parts) > 1 else ""
     from app.db.models import Federation, FederationGroup
-    from app.services.federations import create_federation, federation_members, join_federation, leave_federation
+    from app.services.federations import create_federation, delete_federation, federation_members, join_federation, leave_federation, rename_federation
     try:
         async with database.sessions() as session:
             async with session.begin():
@@ -1156,8 +1156,30 @@ async def federation_command(message: Message, bot: Bot, database: Database):
                     await join_federation(session, federation_id=int(value), chat_id=message.chat.id, actor_id=message.from_user.id)
                     response = f"✅ This group explicitly joined federation #{value}."
                 elif action == "leave":
-                    removed = await leave_federation(session, chat_id=message.chat.id)
-                    response = "This group left its federation." if removed else "This group is not in a federation."
+                    membership = await session.scalar(select(FederationGroup).where(FederationGroup.chat_id == message.chat.id))
+                    if membership is not None:
+                        federation = await session.get(Federation, membership.federation_id)
+                        if federation.owner_chat_id == message.chat.id:
+                            response = "The owner group cannot leave while the federation exists. Use /fed delete to remove it."
+                        else:
+                            await leave_federation(session, chat_id=message.chat.id)
+                            response = "This group left its federation."
+                    else:
+                        response = "This group is not in a federation."
+                elif action == "rename" and value:
+                    membership = await session.scalar(select(FederationGroup).where(FederationGroup.chat_id == message.chat.id))
+                    if membership is None:
+                        raise ValueError("This group has not opted into a federation.")
+                    federation = await rename_federation(session, federation_id=membership.federation_id,
+                                                          owner_chat_id=message.chat.id, name=value)
+                    response = f"✅ Federation renamed to <b>{federation.name}</b>."
+                elif action == "delete":
+                    membership = await session.scalar(select(FederationGroup).where(FederationGroup.chat_id == message.chat.id))
+                    if membership is None:
+                        raise ValueError("This group has not opted into a federation.")
+                    removed = await delete_federation(session, federation_id=membership.federation_id,
+                                                      owner_chat_id=message.chat.id)
+                    response = "✅ Federation deleted. All member opt-ins and federation ban records were removed."
                 elif action == "info":
                     membership = await session.scalar(select(FederationGroup).where(FederationGroup.chat_id == message.chat.id))
                     if membership is None:
@@ -1167,7 +1189,7 @@ async def federation_command(message: Message, bot: Bot, database: Database):
                         members = await federation_members(session, membership.federation_id)
                         response = f"Federation <b>{federation.name}</b> (#{federation.id}) · {len(members)} opted-in group(s)."
                 else:
-                    response = "Usage: /fed create NAME | /fed join FEDERATION_ID | /fed leave | /fed info"
+                    response = "Usage: /fed create NAME | /fed join ID | /fed leave | /fed info | /fed rename NAME | /fed delete"
         await message.answer(response)
     except ValueError as exc:
         await message.answer("⛔ " + str(exc))
