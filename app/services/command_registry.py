@@ -63,7 +63,30 @@ _REPORTING = (
     CommandSpec("clean", "Delete a bounded number of recent group messages", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("format", "Format escaped text as bold, italic, code, or quote"),
 )
-COMMANDS = _CORE + _MODERATION + _REPORTING
+_PHASE3_EXTRA = tuple(CommandSpec(name, description, AccessLevel.GROUP_ADMIN, True) for name, description in (
+    ("tban", "Temporarily ban a replied-to member"),
+    ("tmute", "Temporarily mute a replied-to member"),
+    ("setgoodbye", "Set the group goodbye template"),
+    ("blocklist", "Manage blocked terms"),
+    ("closereport", "Close a group report"),
+    ("resetwarnings", "Reset a member's warnings"),
+    ("antiraid", "Configure join-spike alerts"),
+    ("captcha", "Configure join CAPTCHA"),
+    ("topic", "Manage forum topics"),
+    ("fban", "Apply a federation ban to opted-in groups"),
+    ("funban", "Revoke a federation ban"),
+    ("fed", "Manage federation membership"),
+    ("disable", "Disable a command in this group"),
+    ("enable", "Enable a command in this group"),
+    ("disabled", "List disabled commands"),
+    ("disableadmin", "Choose whether disabled commands affect admins"),
+    ("goodbye", "Configure goodbye messages"),
+    ("antiflood", "Configure flood protection"),
+    ("blocklist", "Manage blocked terms"),
+    ("export", "Export this group's supported settings"),
+    ("import", "Import supported group settings"),
+))
+COMMANDS = _CORE + _MODERATION + _REPORTING + _PHASE3_EXTRA
 COMMAND_MAP = {item.name: item for item in COMMANDS}
 
 
