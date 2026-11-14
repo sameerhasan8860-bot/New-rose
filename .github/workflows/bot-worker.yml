@@ -1,0 +1,36 @@
+name: MASTER X Bot Worker
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: master-x-bot-worker
+  cancel-in-progress: true
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Start bot
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LOG_LEVEL: INFO
+          GLOBAL_OWNER_IDS: ${{ secrets.GLOBAL_OWNER_IDS }}
+        run: |
+          if [ -z "$BOT_TOKEN" ]; then
+            echo "::error::Add BOT_TOKEN in repository Actions secrets."
+            exit 1
+          fi
+          python -m app
