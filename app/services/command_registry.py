@@ -60,6 +60,8 @@ _REPORTING = (
     CommandSpec("import", "Import a validated group settings export", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("fed", "Create, join, leave, or inspect an explicitly consented federation", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("privacy", "View or erase your records in this group", AccessLevel.EVERYONE, True),
+    CommandSpec("clean", "Delete a bounded number of recent group messages", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("format", "Format escaped text as bold, italic, code, or quote"),
 )
 COMMANDS = _CORE + _MODERATION + _REPORTING
 COMMAND_MAP = {item.name: item for item in COMMANDS}
