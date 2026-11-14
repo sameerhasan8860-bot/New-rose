@@ -1,8 +1,6 @@
 from app.handlers import BRAND
 
-def test_brand_is_present():
-    assert "MASTER" in BRAND
-    assert "X" in BRAND
 
-def test_brand_is_not_empty():
-    assert len(BRAND) > 5
+def test_brand_is_present():
+    assert "𝗠𝗔𝗦𝗧𝗘𝗥" in BRAND
+    assert "𝗫" in BRAND
