@@ -470,8 +470,8 @@ async def match_group_filter(message: Message, bot: Bot, database: Database):
         rows = (await session.scalars(select(GroupFilter).where(GroupFilter.chat_id == message.chat.id).limit(100))).all()
         blocked = (await session.scalars(select(BlockedTerm).where(BlockedTerm.chat_id == message.chat.id).limit(200))).all()
         locks = await repo.get_setting(session, message.chat.id, "locks", [])
+        antiflood = await repo.get_setting(session, message.chat.id, "antiflood_enabled", False)
     text_value = message.text.casefold()
-    antiflood = await repo.get_setting(session, message.chat.id, "antiflood_enabled", False)
     blocked_match = next((term for term in blocked if term.term in text_value), None)
     link_entities = any(entity.type in {"url", "text_link"} for entity in (message.entities or []))
     lock_match = (
