@@ -1,4 +1,6 @@
 import re
+import time
+from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 
 from aiogram import Bot, F, Router
@@ -14,6 +16,7 @@ from app.db.repositories import GroupRepository
 from app.services.authorization import has_group_admin_rights
 
 router = Router(name="core")
+_FLOOD_WINDOWS = defaultdict(deque)
 BRAND = "✦ 𝗠𝗔𝗦𝗧𝗘𝗥 𝗫 ✦"
 GROUP_TYPES = (ChatType.GROUP, ChatType.SUPERGROUP)
 _DURATION = re.compile(r"^(\d+)([smhd])$", re.IGNORECASE)
@@ -468,6 +471,7 @@ async def match_group_filter(message: Message, bot: Bot, database: Database):
         blocked = (await session.scalars(select(BlockedTerm).where(BlockedTerm.chat_id == message.chat.id).limit(200))).all()
         locks = await repo.get_setting(session, message.chat.id, "locks", [])
     text_value = message.text.casefold()
+    antiflood = await repo.get_setting(session, message.chat.id, "antiflood_enabled", False)
     blocked_match = next((term for term in blocked if term.term in text_value), None)
     link_entities = any(entity.type in {"url", "text_link"} for entity in (message.entities or []))
     lock_match = (
@@ -478,7 +482,20 @@ async def match_group_filter(message: Message, bot: Bot, database: Database):
         or ("stickers" in locks and bool(message.sticker))
         or ("media" in locks and bool(message.photo or message.video or message.document or message.audio or message.voice or message.sticker or message.animation))
     )
-    if blocked_match or lock_match:
+    flood_hit = False
+    if antiflood:
+        key = (message.chat.id, message.from_user.id)
+        now = time.monotonic()
+        window = _FLOOD_WINDOWS[key]
+        while window and now - window[0] > 8:
+            window.popleft()
+        window.append(now)
+        if len(window) > 5:
+            flood_hit = True
+            window.clear()
+        if len(_FLOOD_WINDOWS) > 5000:
+            _FLOOD_WINDOWS.clear()
+    if blocked_match or lock_match or flood_hit:
         try:
             await bot.delete_message(message.chat.id, message.message_id)
         except (TelegramBadRequest, TelegramForbiddenError):
@@ -714,3 +731,19 @@ async def enforce_media_locks(message: Message, bot: Bot, database: Database):
             await bot.delete_message(message.chat.id, message.message_id)
         except (TelegramBadRequest, TelegramForbiddenError):
             pass
+
+
+@router.message(Command("antiflood"))
+async def antiflood_toggle(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can configure antiflood.")
+        return
+    value = _args(message).lower()
+    if value not in {"on", "off"}:
+        await message.answer("Usage: /antiflood on OR /antiflood off. Deletes a user's 6th text message within 8 seconds.")
+        return
+    repo = GroupRepository()
+    async with database.sessions() as session:
+        async with session.begin():
+            await repo.set_setting(session, message.chat.id, "antiflood_enabled", value == "on")
+    await message.answer(f"🌊 Antiflood turned {value}.")
