@@ -114,6 +114,7 @@ class CaptchaChallenge(Base):
     user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     answer: Mapped[int] = mapped_column(Integer, nullable=False)
     choices_json: Mapped[str] = mapped_column(Text, nullable=False)
+    previous_permissions_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(16), default="pending", nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
