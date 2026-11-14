@@ -35,15 +35,15 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [x] Configurable goodbye messages
 - [x] Basic configurable text antiflood (6 messages per 8 seconds; in-process counter)
 - [x] Live group-admin authorization helper tests
-- [ ] Mocked Telegram API tests for moderation and reporting authorization paths
+- [ ] Expand mocked Telegram API tests for moderation/reporting/clean handlers (moderation permission-path tests exist; clean handler test pending)
 - [x] Opt-in persistent join CAPTCHA with per-group challenges and callback ownership checks
-- [x] Conservative opt-in antiraid join-spike alerts (5 joins / 30 seconds; alert-only, in-process window)
+- [x] Opt-in antiraid alerts (5 joins / 30 seconds; persisted cross-worker event window and atomic alert deduplication; alert-only)
 - [x] Forum topic create/close/reopen/delete with Telegram Manage Topics permission checks
 - [x] Group-scoped /export and /import for allowlisted settings with strict schema validation
-- [ ] Federations and cross-group connections
-- [ ] Privacy controls and account-data deletion policy
-- [ ] Cleaning commands and formatting helpers
-- [ ] Bot-to-bot safeguards
+- [x] Federation create/join/leave/info with explicit per-group admin consent and database isolation (no cross-group moderation propagation yet)
+- [x] Group-scoped self-service privacy disclosure and erasure for warnings, reports, moderation actions, notes, filters, blocked terms, and CAPTCHA challenges
+- [x] Bounded /clean (1–20 recent messages; actor and bot delete permissions required) and safe escaped /format helpers (bold, italic, code, quote)
+- [x] Moderation rejects bot actors and bot targets; join CAPTCHA and antiraid ignore bot accounts
 - [x] PostgreSQL integration and concurrent duplicate-delivery claim/lease tests (CI run #138 passed)
 - [x] Failed handlers no longer permanently consume update IDs (post-success persistence; external Telegram side effects are not exactly-once)
 - [ ] Live Telegram test-group verification
