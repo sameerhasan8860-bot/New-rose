@@ -1077,3 +1077,47 @@ async def privacy_command(message: Message, database: Database):
         ", ".join(f"{key.replace('_', ' ')} {value}" for key, value in counts.items()) +
         ". Telegram messages and records in other groups are unaffected."
     )
+
+
+@router.message(Command("format"))
+async def format_command(message: Message):
+    raw = _args(message)
+    parts = raw.split(maxsplit=1)
+    if len(parts) != 2:
+        await message.answer("Usage: /format bold|italic|code|quote TEXT")
+        return
+    from app.services.formatting import format_text
+    try:
+        rendered = format_text(parts[0], parts[1])
+    except ValueError as exc:
+        await message.answer("⛔ " + str(exc))
+        return
+    await message.answer(rendered)
+
+
+@router.message(Command("clean"))
+async def clean_messages(message: Message, bot: Bot):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or message.from_user.is_bot:
+        await message.answer("Use /clean COUNT in a group.")
+        return
+    if not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can clean messages.")
+        return
+    raw = _args(message)
+    if not raw.isdigit() or not 1 <= int(raw) <= 20:
+        await message.answer("Usage: /clean COUNT (1–20 messages, including this command).")
+        return
+    try:
+        actor = await bot.get_chat_member(message.chat.id, message.from_user.id)
+        me = await bot.get_chat_member(message.chat.id, (await bot.get_me()).id)
+        if actor.status != ChatMemberStatus.CREATOR and not getattr(actor, "can_delete_messages", False):
+            await message.answer("⛔ You need Telegram's Delete Messages permission.")
+            return
+        if me.status != ChatMemberStatus.CREATOR and not getattr(me, "can_delete_messages", False):
+            await message.answer("I need Telegram's Delete Messages permission.")
+            return
+        count = int(raw)
+        ids = list(range(max(1, message.message_id - count + 1), message.message_id + 1))
+        await bot.delete_messages(message.chat.id, ids)
+    except (TelegramBadRequest, TelegramForbiddenError) as exc:
+        await message.answer(f"Telegram could not clean those messages: {str(exc)[:180]}")
