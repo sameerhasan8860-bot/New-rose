@@ -33,7 +33,8 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [x] Group category locks for links, photos, videos, documents, stickers, and media
 - [x] Group-scoped blocked terms with automatic matching-message deletion
 - [x] Configurable goodbye messages
+- [x] Basic configurable text antiflood (6 messages per 8 seconds; in-process counter)
 - [ ] Mocked Telegram API tests for moderation and reporting authorization paths
-- [ ] CAPTCHA, antiflood, antiraid
+- [ ] CAPTCHA and antiraid
 - [ ] Federations, connections, topics, privacy, cleaning, formatting, import/export, bot-to-bot safeguards
 - [ ] PostgreSQL integration, retry-safe update processing, and live test-group verification
