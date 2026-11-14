@@ -1191,7 +1191,7 @@ async def federation_command(message: Message, bot: Bot, database: Database):
                 else:
                     response = "Usage: /fed create NAME | /fed join ID | /fed leave | /fed info | /fed rename NAME | /fed delete"
         await message.answer(response)
-    except ValueError as exc:
+    except (ValueError, PermissionError) as exc:
         await message.answer("⛔ " + str(exc))
 
 
