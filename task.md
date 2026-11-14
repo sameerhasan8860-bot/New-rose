@@ -18,7 +18,7 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [x] Alembic migration environment and initial versioned migration
 - [x] Wire migrations, database lifecycle, and update deduplication into polling runtime
 - [x] Protect /settings with live Telegram admin verification
-- [ ] CI evidence: migration + all tests pass on latest commit
+- [x] CI evidence: migration + all tests pass on commit 7757deb (rerun after latest moderation fixes pending)
 - [ ] PostgreSQL integration and concurrency tests
 
 ## Phase 3 — Rose compatibility (IN PROGRESS)
