@@ -35,7 +35,7 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [x] Configurable goodbye messages
 - [x] Basic configurable text antiflood (6 messages per 8 seconds; in-process counter)
 - [x] Live group-admin authorization helper tests
-- [x] Mocked Telegram API permission tests for moderation and bounded clean handlers; reporting persistence/authorization tests exist
+- [x] Mocked Telegram API permission tests for moderation and bounded clean handlers; reporting persistence/authorization tests exist (CI #192: 46 passed)
 - [x] Opt-in persistent join CAPTCHA with per-group challenges, callback ownership checks, and saved/restored member permissions when Telegram exposes them
 - [x] Opt-in antiraid alerts (5 joins / 30 seconds; persisted cross-worker event window and atomic alert deduplication; alert-only)
 - [x] Forum topic create/close/reopen/delete with Telegram Manage Topics permission checks
@@ -44,6 +44,6 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [x] Group-scoped self-service privacy disclosure and erasure for warnings, reports, moderation actions, notes, filters, blocked terms, and CAPTCHA challenges
 - [x] Bounded /clean (1–20 recent messages; actor and bot delete permissions required) and safe escaped /format helpers (bold, italic, code, quote)
 - [x] Moderation rejects bot actors and bot targets; join CAPTCHA and antiraid ignore bot accounts
-- [x] PostgreSQL integration and concurrent duplicate-delivery claim/lease tests (CI run #138 passed)
+- [x] PostgreSQL integration and concurrent duplicate-delivery claim/lease tests (CI #138 passed; CI #192 also validated all migrations on SQLite and PostgreSQL)
 - [x] Failed handlers no longer permanently consume update IDs (post-success persistence; external Telegram side effects are not exactly-once)
 - [ ] Live Telegram test-group verification
