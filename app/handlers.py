@@ -146,9 +146,10 @@ HELP_BUTTONS = [
     [("⚙️ Tools", "mxhelp:tools"), ("🔧 Admin", "mxhelp:admin")],
 ]
 def _help_keyboard(page: str = "home") -> InlineKeyboardMarkup:
-    rows = [[InlineKeyboardButton(text=label, callback_data=data) for label, data in row] for row in HELP_BUTTONS]
+    style_by_page = {"core": "primary", "moderation": "danger", "antispam": "danger", "community": "success", "notes": "primary", "federation": "primary", "tools": "success", "admin": "primary"}
+    rows = [[InlineKeyboardButton(text=label, callback_data=data, style=style_by_page.get(data.split(":")[-1], "primary")) for label, data in row] for row in HELP_BUTTONS]
     if page != "home":
-        rows.append([InlineKeyboardButton(text="⬅️ Back to Help", callback_data="mxhelp:home")])
+        rows.append([InlineKeyboardButton(text="⬅️ Back to Help", callback_data="mxhelp:home", style="primary")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -166,8 +167,8 @@ async def start(message: Message):
         "Tap Help to explore the command center."
     )
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📚  Help & Commands", callback_data="mxhelp:home")],
-        [InlineKeyboardButton(text="ℹ️  About MASTER X", callback_data="mxhelp:about")],
+        [InlineKeyboardButton(text="📚  Help & Commands", callback_data="mxhelp:home", style="primary")],
+        [InlineKeyboardButton(text="ℹ️  About MASTER X", callback_data="mxhelp:about", style="success")],
     ])
     await message.answer(text, reply_markup=keyboard)
 
@@ -187,7 +188,7 @@ async def help_navigation(callback: CallbackQuery):
             "Use /help to browse the command guide."
         )
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="📚 Open Help Center", callback_data="mxhelp:home")]
+            [InlineKeyboardButton(text="📚 Open Help Center", callback_data="mxhelp:home", style="primary")]
         ])
     elif page == "home":
         text, keyboard = HELP_HOME, _help_keyboard()
@@ -776,7 +777,7 @@ async def greet_new_member(event: ChatMemberUpdated, bot: Bot, database: Databas
                             await session.flush()
                             challenge_id = challenge.id
                     await bot.restrict_chat_member(event.chat.id, user.id, permissions=ChatPermissions(can_send_messages=False))
-                    buttons = [[InlineKeyboardButton(text=str(value), callback_data=f"mxcap:{challenge_id}:{index}") for index, value in enumerate(choices)]]
+                    buttons = [[InlineKeyboardButton(text=str(value), callback_data=f"mxcap:{challenge_id}:{index}", style="success") for index, value in enumerate(choices)]]
                     await bot.send_message(event.chat.id, f"🧩 {user.full_name}, solve this to unlock chatting: {a} + {b} = ?", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
         except (TelegramBadRequest, TelegramForbiddenError):
             pass
