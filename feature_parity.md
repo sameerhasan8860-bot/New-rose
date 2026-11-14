@@ -15,12 +15,12 @@ Full command extraction remains IN PROGRESS; do not claim full Rose parity from 
 | Feature family | MASTER X status | Notes |
 |---|---|---|
 | Moderation, reports, notes, filters, greetings, locks, blocklist | IMPLEMENTED; automated coverage partial | See command_catalog.md |
-| CAPTCHA, antiraid alerts, forum topics | IMPLEMENTED; live Telegram verification pending | Antiraid is alert-only and in-process |
+| CAPTCHA, antiraid alerts, forum topics | IMPLEMENTED; live Telegram verification pending | Antiraid join windows and alert claims are persisted across workers; CAPTCHA stores/restores member permissions when available |
 | Import/export | IMPLEMENTED; CI test pending | Versioned JSON; allowlisted group settings only |
-| Federations/connections | NOT STARTED | Needs explicit per-group consent and cross-chat authorization |
-| Privacy | NOT STARTED | Retention/deletion semantics must be specified before implementation |
-| Cleaning/formatting | NOT STARTED | Command syntax and safety limits need specification |
-| Bot-to-bot safeguards | NOT STARTED | Must avoid acting on bot accounts or trusting bot-generated admin claims |
+| Federation membership | IMPLEMENTED; tests added | Create/join/leave/info with per-group admin consent; no cross-group enforcement/ban propagation yet |
+| Privacy | IMPLEMENTED; tests added | Self-service erasure of this user's records in the current group only; Telegram messages and other groups unaffected |
+| Cleaning/formatting | IMPLEMENTED; formatting tests added | /clean bounded to 20 messages and permission-gated; /format escapes HTML |
+| Bot-to-bot safeguards | PARTIAL | Moderation actor/target bot accounts are rejected; join protections ignore bots; additional command-wide mocked tests remain |
 
 ## Group Help — publicly documented capabilities
 Verified public feature page lists join protection/CAPTCHA, anti-spam, anti-flood, anti-porn, banned words, night mode, and a free clone bot with custom name/profile image. Pricing page additionally lists moderation commands, welcome/goodbye/rules, custom commands, message deletion, automatic replies, mention notifications, and recurring messages at plan-dependent levels.
