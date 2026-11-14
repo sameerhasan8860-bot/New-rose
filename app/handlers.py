@@ -10,7 +10,7 @@ from aiogram.enums import ChatMemberStatus, ChatType
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.filters import Command
 from aiogram.types import CallbackQuery, ChatMemberUpdated, ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, Message, User
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 
 from app.db.engine import Database
 from app.db.models import BlockedTerm, CaptchaChallenge, Group, GroupFilter, GroupSetting, ModerationAction, Note, ReportRecord, WarningRecord
@@ -673,31 +673,42 @@ async def verify_captcha(callback: CallbackQuery, bot: Bot, database: Database):
         expired = expires_at < datetime.now(timezone.utc)
         choices = json.loads(challenge.choices_json)
         valid = not expired and 0 <= selected_index < len(choices) and choices[selected_index] == challenge.answer
-        if expired:
-            challenge.status = "expired"
-            await session.commit()
-        elif not valid:
+        if not expired and not valid:
             await callback.answer("Incorrect answer. Try another option.", show_alert=True)
+            return
+        claim = await session.execute(
+            update(CaptchaChallenge)
+            .where(CaptchaChallenge.id == challenge_id, CaptchaChallenge.status == "pending")
+            .values(status="processing")
+        )
+        await session.commit()
+        if claim.rowcount != 1:
+            await callback.answer("This challenge is already being processed.", show_alert=True)
             return
     try:
         chat = await bot.get_chat(chat_id)
         restore_permissions = ChatPermissions(**json.loads(previous_permissions_json)) if previous_permissions_json else chat.permissions
         if restore_permissions is None:
+            async with database.sessions() as session:
+                async with session.begin():
+                    await session.execute(update(CaptchaChallenge).where(CaptchaChallenge.id == challenge_id, CaptchaChallenge.status == "processing").values(status="pending"))
             await callback.answer("Saved permissions unavailable; ask an admin.", show_alert=True)
             return
         await bot.restrict_chat_member(chat_id, user_id, permissions=restore_permissions)
     except (TelegramBadRequest, TelegramForbiddenError):
+        async with database.sessions() as session:
+            async with session.begin():
+                await session.execute(update(CaptchaChallenge).where(CaptchaChallenge.id == challenge_id, CaptchaChallenge.status == "processing").values(status="pending"))
         await callback.answer("Could not restore group permissions. Please contact an admin.", show_alert=True)
         return
+    async with database.sessions() as session:
+        async with session.begin():
+            final_status = "expired" if expired else "passed"
+            await session.execute(update(CaptchaChallenge).where(CaptchaChallenge.id == challenge_id, CaptchaChallenge.status == "processing").values(status=final_status))
     if expired:
         await callback.message.edit_text("⌛ CAPTCHA expired. Your group permissions were restored; ask an admin if you still cannot chat.")
         await callback.answer("Expired.")
         return
-    async with database.sessions() as session:
-        async with session.begin():
-            row = await session.get(CaptchaChallenge, challenge_id)
-            if row is not None and row.status == "pending":
-                row.status = "passed"
     await callback.message.edit_text("✅ CAPTCHA passed. You can now chat.")
     await callback.answer("Verified!")
 
