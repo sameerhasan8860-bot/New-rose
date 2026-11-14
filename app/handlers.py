@@ -560,12 +560,11 @@ async def greet_new_member(event: ChatMemberUpdated, bot: Bot, database: Databas
     async with database.sessions() as session:
         antiraid_enabled = await repo.get_setting(session, event.chat.id, "antiraid_enabled", False)
     if antiraid_enabled:
-        now = time.monotonic()
-        joins = _JOIN_WINDOWS[event.chat.id]
-        while joins and now - joins[0] > 30:
-            joins.popleft()
-        joins.append(now)
-        if len(joins) == 5:
+        from app.services.antiraid import record_join_and_claim_alert
+        async with database.sessions() as session:
+            async with session.begin():
+                should_alert = await record_join_and_claim_alert(session, chat_id=event.chat.id, user_id=user.id)
+        if should_alert:
             try:
                 admins = await bot.get_chat_administrators(event.chat.id)
                 for admin in admins:
