@@ -42,6 +42,7 @@ This catalogue lists handlers that exist in the current repository. Commands are
 | /resetwarnings | Group | Clear warnings for the replied-to member and record an audit action | Group admin |
 | /captcha on/off | Group | Restrict new non-admin members until they pass a persisted 5-minute arithmetic challenge | Group admin |
 | /antiraid on/off | Group | Alert admins after 5 joins in 30 seconds; no automatic bans | Group admin |
+| /topic create NAME / close ID / reopen ID / delete ID | Forum supergroup | Manage forum topics with live user and bot permission checks | Group admin with Manage Topics |
 
 Not yet implemented: federations, connections, topics, privacy, cleaning, formatting, import/export, and bot-to-bot safeguards. Notes, keyword filters, configurable welcome/goodbye messages, category locks, group-scoped blocked terms, and basic in-process text antiflood, opt-in join CAPTCHA, and conservative join-spike alerts are implemented in the current build.
 
