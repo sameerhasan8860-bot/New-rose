@@ -1,6 +1,6 @@
 import asyncio
 from app.db.engine import Database
-from app.db.models import Group, GroupFilter, Note, ReportRecord
+from app.db.models import BlockedTerm, Group, GroupFilter, Note, ReportRecord
 from app.db.repositories import GroupRepository, mark_update_processed
 
 
@@ -78,5 +78,24 @@ def test_notes_and_filters_are_isolated_by_group():
                 filters_b = (await session.scalars(select(GroupFilter).where(GroupFilter.chat_id == -2002))).all()
                 assert len(notes_a) == 1 and notes_a[0].content == "Be kind"
                 assert filters_b == []
+        await db.close()
+    asyncio.run(scenario())
+
+
+def test_blocked_terms_are_group_scoped():
+    async def scenario():
+        db = Database("sqlite+aiosqlite:///:memory:")
+        await db.create_schema()
+        async with db.sessions() as session:
+            async with session.begin():
+                session.add_all([Group(chat_id=-3001, title="A"), Group(chat_id=-3002, title="B")])
+            async with session.begin():
+                session.add(BlockedTerm(chat_id=-3001, term="scam", creator_id=7))
+            async with session.begin():
+                from sqlalchemy import select
+                a = (await session.scalars(select(BlockedTerm).where(BlockedTerm.chat_id == -3001))).all()
+                b = (await session.scalars(select(BlockedTerm).where(BlockedTerm.chat_id == -3002))).all()
+                assert [item.term for item in a] == ["scam"]
+                assert b == []
         await db.close()
     asyncio.run(scenario())
