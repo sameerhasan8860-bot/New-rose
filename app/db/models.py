@@ -154,3 +154,21 @@ class FederationBan(Base):
     actor_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     reason: Mapped[str] = mapped_column(Text, default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class RaidJoinEvent(Base):
+    __tablename__ = "raid_join_events"
+    __table_args__ = (Index("ix_raid_join_chat_time", "chat_id", "joined_at"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    chat_id: Mapped[int] = mapped_column(ForeignKey("groups.chat_id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+
+class RaidAlert(Base):
+    __tablename__ = "raid_alerts"
+    __table_args__ = (Index("ix_raid_alert_chat_threshold", "chat_id", "threshold_event_id", unique=True),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    chat_id: Mapped[int] = mapped_column(ForeignKey("groups.chat_id", ondelete="CASCADE"), nullable=False)
+    threshold_event_id: Mapped[int] = mapped_column(ForeignKey("raid_join_events.id", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
