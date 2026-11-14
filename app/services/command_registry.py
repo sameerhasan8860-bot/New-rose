@@ -59,6 +59,7 @@ _REPORTING = (
     CommandSpec("export", "Export allowlisted settings for this group", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("import", "Import a validated group settings export", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("fed", "Create, join, leave, or inspect an explicitly consented federation", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("privacy", "View or erase your records in this group", AccessLevel.EVERYONE, True),
 )
 COMMANDS = _CORE + _MODERATION + _REPORTING
 COMMAND_MAP = {item.name: item for item in COMMANDS}
