@@ -38,3 +38,20 @@ Source: https://combot.org/
 ## Telegram platform constraints
 Privacy mode limits which group messages a bot receives. Admin bots receive all group messages; a bot can also be configured through BotFather to disable privacy mode, which requires re-adding it for the change to apply. Command scopes do not replace backend authorization.
 Source: https://core.telegram.org/bots/features
+
+
+## Authoritative Rose command-reference coverage
+The following official pages were inspected for command semantics. This is a bounded reference set, not an exhaustive extraction of every Rose module:
+
+| Official reference | Verified command families | MASTER X implementation status |
+|---|---|---|
+| https://missrose.org/docs/basics/command-usage/ | on/off aliases; duration syntax | Partial: current toggles accept on/off; durations use s/m/h/d, not Rose's full documented syntax |
+| https://missrose.org/docs/moderation/restrictions/ | ban, tban, dban, sban; mute, tmute, dmute, smute; kick, dkick, skick; unban, unmute | Partial: ban/unban/kick/mute/unmute exist; timed ban/mute aliases, delete/silent variants and username/id target parsing are missing |
+| https://missrose.org/docs/moderation/admins/ | admin permission mapping, promotion/demotion, anonymous admin verification | Partial: live group-admin verification exists; permission-specific command gates are inconsistent and anonymous admin verification is not implemented |
+| https://missrose.org/docs/moderation/disabling/ | disabled, disableable, disable, enable, disableadmin, disabledel | Not implemented |
+| https://missrose.org/docs/connections/ and https://missrose.org/docs/basics/connections/ | connect, disconnect, connection, reconnect; one active group and recent connection history | Not implemented |
+| https://missrose.org/docs/federations/ and /docs/federations/creating/ | federation ownership, create/rename/delete, group opt-in | Partial: basic group-consented membership only |
+| https://missrose.org/docs/federations/fedbans/ and /docs/federations/managing/ | fban/unfban, fed admin roles, fed reasons/logs, banlist, subscriptions | Not implemented beyond schema groundwork; no cross-group ban enforcement |
+| https://missrose.org/docs/advanced/bot-to-bot/ | off/admin/all modes and command review before bot admin actions | Not implemented; MASTER X fails closed and rejects bot-authored updates by default |
+
+Do not advertise Rose command parity for any feature marked Partial or Not implemented. Rose-specific command behavior and permission requirements must be implemented and tested before changing these statuses.
