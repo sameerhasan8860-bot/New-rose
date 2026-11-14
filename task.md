@@ -26,6 +26,8 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [x] Core moderation commands: ban, unban, kick, mute, unmute, warn, warnings
 - [x] Group-scoped /report persistence and best-effort private admin notifications
 - [x] Group-admin-only /reports and /adminlog (latest 10 records, current group only)
+- [x] Group-scoped notes: /save, /get, /notes
+- [x] Group-scoped keyword filters: /filter, /stop, /filters
 - [ ] Mocked Telegram API tests for moderation and reporting authorization paths
 - [ ] Greetings, notes, filters, locks, blocklists, CAPTCHA, antiflood, antiraid
 - [ ] Federations, connections, topics, privacy, cleaning, formatting, import/export, bot-to-bot safeguards
