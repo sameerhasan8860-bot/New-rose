@@ -625,6 +625,7 @@ async def verify_captcha(callback: CallbackQuery, bot: Bot, database: Database):
             return
         chat_id, user_id = challenge.chat_id, challenge.user_id
         expires_at = challenge.expires_at
+        previous_permissions_json = challenge.previous_permissions_json
         if expires_at.tzinfo is None:
             expires_at = expires_at.replace(tzinfo=timezone.utc)
         expired = expires_at < datetime.now(timezone.utc)
@@ -638,10 +639,11 @@ async def verify_captcha(callback: CallbackQuery, bot: Bot, database: Database):
             return
     try:
         chat = await bot.get_chat(chat_id)
-        if chat.permissions is None:
-            await callback.answer("Group defaults unavailable; ask an admin.", show_alert=True)
+        restore_permissions = ChatPermissions(**json.loads(previous_permissions_json)) if previous_permissions_json else chat.permissions
+        if restore_permissions is None:
+            await callback.answer("Saved permissions unavailable; ask an admin.", show_alert=True)
             return
-        await bot.restrict_chat_member(chat_id, user_id, permissions=chat.permissions)
+        await bot.restrict_chat_member(chat_id, user_id, permissions=restore_permissions)
     except (TelegramBadRequest, TelegramForbiddenError):
         await callback.answer("Could not restore group permissions. Please contact an admin.", show_alert=True)
         return
