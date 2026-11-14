@@ -782,6 +782,10 @@ async def reset_warnings(message: Message, bot: Bot, database: Database):
     async with database.sessions() as session:
         async with session.begin():
             from sqlalchemy import delete
+            group = await session.get(Group, message.chat.id)
+            if group is None:
+                session.add(Group(chat_id=message.chat.id, title=message.chat.title or ""))
+                await session.flush()
             result = await session.execute(delete(WarningRecord).where(
                 WarningRecord.chat_id == message.chat.id,
                 WarningRecord.user_id == target.id,
