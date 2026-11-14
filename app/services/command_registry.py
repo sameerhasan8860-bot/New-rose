@@ -42,6 +42,8 @@ _REPORTING = (
     CommandSpec("filter", "Create or update a keyword response", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("stop", "Remove a keyword filter", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("filters", "List group keyword filters", AccessLevel.EVERYONE, True),
+    CommandSpec("welcome", "Enable or disable welcome messages", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("setwelcome", "Set the welcome message template", AccessLevel.GROUP_ADMIN, True),
 )
 COMMANDS = _CORE + _MODERATION + _REPORTING
 COMMAND_MAP = {item.name: item for item in COMMANDS}
