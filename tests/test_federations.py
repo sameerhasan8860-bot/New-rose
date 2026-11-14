@@ -98,3 +98,30 @@ def test_repeated_federation_ban_updates_reason_without_duplicate_rows():
         await db.close()
     from sqlalchemy import select
     asyncio.run(scenario())
+
+
+def test_only_owner_group_can_rename_or_delete_federation():
+    from app.services.federations import delete_federation, rename_federation
+
+    async def scenario():
+        db = Database("sqlite+aiosqlite:///:memory:")
+        await db.create_schema()
+        async with db.sessions() as session:
+            async with session.begin():
+                fed = await create_federation(session, name="owned", chat_id=-5001, actor_id=1)
+                fed_id = fed.id
+            with pytest.raises(PermissionError, match="owner group"):
+                async with session.begin():
+                    await rename_federation(session, federation_id=fed_id, owner_chat_id=-5002, name="hijack")
+            with pytest.raises(PermissionError, match="owner group"):
+                async with session.begin():
+                    await delete_federation(session, federation_id=fed_id, owner_chat_id=-5002)
+            async with session.begin():
+                renamed = await rename_federation(session, federation_id=fed_id, owner_chat_id=-5001, name="renamed")
+                assert renamed.name == "renamed"
+            async with session.begin():
+                assert await delete_federation(session, federation_id=fed_id, owner_chat_id=-5001)
+                assert await session.get(Federation, fed_id) is None
+        await db.close()
+    from app.db.models import Federation
+    asyncio.run(scenario())
