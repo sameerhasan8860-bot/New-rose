@@ -5,11 +5,12 @@ from aiogram import Bot, F, Router
 from aiogram.enums import ChatMemberStatus, ChatType
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.filters import Command
-from aiogram.types import ChatPermissions, Message, User
+from aiogram.types import ChatMemberUpdated, ChatPermissions, Message, User
 from sqlalchemy import func, select
 
 from app.db.engine import Database
-from app.db.models import Group, GroupFilter, ModerationAction, Note, ReportRecord, WarningRecord
+from app.db.models import Group, GroupFilter, GroupSetting, ModerationAction, Note, ReportRecord, WarningRecord
+from app.db.repositories import GroupRepository
 from app.services.authorization import has_group_admin_rights
 
 router = Router(name="core")
@@ -469,3 +470,58 @@ async def match_group_filter(message: Message, database: Database):
             import html
             await message.answer(html.escape(row.response))
             return
+
+
+@router.message(Command("welcome"))
+async def welcome_toggle(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can configure welcome messages.")
+        return
+    value = _args(message).lower()
+    if value not in {"on", "off"}:
+        await message.answer("Usage: /welcome on OR /welcome off")
+        return
+    repo = GroupRepository()
+    async with database.sessions() as session:
+        async with session.begin():
+            await repo.set_setting(session, message.chat.id, "welcome_enabled", value == "on")
+    await message.answer(f"✅ Welcome messages turned {value} for this group.")
+
+
+@router.message(Command("setwelcome"))
+async def set_welcome_text(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can set the welcome text.")
+        return
+    template = _args(message)
+    if not template or len(template) > 1000:
+        await message.answer("Usage: /setwelcome Welcome {mention}! Keep it under 1000 characters. Supported: {first}, {name}, {id}, {mention}.")
+        return
+    repo = GroupRepository()
+    async with database.sessions() as session:
+        async with session.begin():
+            await repo.set_setting(session, message.chat.id, "welcome_template", template)
+    await message.answer("✅ Welcome message template saved.")
+
+
+@router.chat_member()
+async def greet_new_member(event: ChatMemberUpdated, bot: Bot, database: Database):
+    if event.chat.type not in GROUP_TYPES:
+        return
+    old_status, new_status = event.old_chat_member.status, event.new_chat_member.status
+    active = {ChatMemberStatus.MEMBER, ChatMemberStatus.RESTRICTED, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.CREATOR}
+    if old_status in active or new_status not in active:
+        return
+    user = event.new_chat_member.user
+    if user.is_bot:
+        return
+    repo = GroupRepository()
+    async with database.sessions() as session:
+        enabled = await repo.get_setting(session, event.chat.id, "welcome_enabled", False)
+        template = await repo.get_setting(session, event.chat.id, "welcome_template", "Welcome {mention}!")
+    if not enabled:
+        return
+    import html
+    mention = f'<a href="tg://user?id={user.id}">{html.escape(user.full_name)}</a>'
+    rendered = str(template).replace("{first}", html.escape(user.first_name)).replace("{name}", html.escape(user.full_name)).replace("{id}", str(user.id)).replace("{mention}", mention)
+    await bot.send_message(event.chat.id, rendered[:4000])
