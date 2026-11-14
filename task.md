@@ -22,7 +22,8 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [x] PostgreSQL integration and concurrent update insert tests (GitHub Actions PostgreSQL 16 service)
 
 ## Phase 3 — Rose compatibility (IN PROGRESS)
-- [ ] Build command catalogue from authoritative documentation
+- [ ] Build command catalogue from authoritative documentation (bounded Rose reference set reviewed; exhaustive extraction remains open)
+- [x] Group-scoped command disabling: /disable, /enable, /disabled, /disableadmin; admin bypass defaults on; recovery commands protected (CI #225: 56 tests passed)
 - [x] Core moderation commands: ban, unban, kick, mute, unmute, timed ban (/tban), timed mute (/tmute), warn, warnings
 - [x] Group-scoped /report persistence and best-effort private admin notifications
 - [x] Group-admin-only /reports and /adminlog (latest 10 records, current group only)
