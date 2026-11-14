@@ -99,3 +99,38 @@ def test_blocked_terms_are_group_scoped():
                 assert b == []
         await db.close()
     asyncio.run(scenario())
+
+
+def test_update_middleware_does_not_mark_failed_handler_as_processed():
+    async def scenario():
+        from aiogram.types import Update
+        from app.db.middleware import UpdateDeduplicationMiddleware
+        from app.db.models import ProcessedUpdate
+        from sqlalchemy import select
+        db = Database("sqlite+aiosqlite:///:memory:")
+        await db.create_schema()
+        middleware = UpdateDeduplicationMiddleware(db)
+        event = Update(update_id=991)
+        calls = {"count": 0}
+
+        async def failing_handler(event, data):
+            calls["count"] += 1
+            raise RuntimeError("temporary failure")
+
+        try:
+            await middleware(failing_handler, event, {})
+        except RuntimeError:
+            pass
+        async with db.sessions() as session:
+            assert await session.get(ProcessedUpdate, 991) is None
+
+        async def successful_handler(event, data):
+            calls["count"] += 1
+            return "ok"
+
+        assert await middleware(successful_handler, event, {}) == "ok"
+        async with db.sessions() as session:
+            assert await session.get(ProcessedUpdate, 991) is not None
+        assert calls["count"] == 2
+        await db.close()
+    asyncio.run(scenario())
