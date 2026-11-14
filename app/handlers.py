@@ -623,7 +623,10 @@ async def verify_captcha(callback: CallbackQuery, bot: Bot, database: Database):
             await callback.answer("This challenge is invalid or already used.", show_alert=True)
             return
         chat_id, user_id = challenge.chat_id, challenge.user_id
-        expired = challenge.expires_at < datetime.now(timezone.utc)
+        expires_at = challenge.expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        expired = expires_at < datetime.now(timezone.utc)
         choices = json.loads(challenge.choices_json)
         valid = not expired and 0 <= selected_index < len(choices) and choices[selected_index] == challenge.answer
         if expired:
