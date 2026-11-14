@@ -19,7 +19,7 @@ def _message(command: str, *, user_id: int = 10):
         from_user=User(id=user_id, is_bot=False, first_name="Tester"),
         text=f"/{command}",
     )
-    msg.answer = AsyncMock()
+    object.__setattr__(msg, "answer", AsyncMock())
     return msg
 
 
