@@ -20,7 +20,7 @@ Full command extraction remains IN PROGRESS; do not claim full Rose parity from 
 | Federation membership | IMPLEMENTED; tests added | Create/join/leave/info with per-group admin consent; no cross-group enforcement/ban propagation yet |
 | Privacy | IMPLEMENTED; tests added | Self-service erasure of this user's records in the current group only; Telegram messages and other groups unaffected |
 | Cleaning/formatting | IMPLEMENTED; formatting tests added | /clean bounded to 20 messages and permission-gated; /format escapes HTML |
-| Bot-to-bot safeguards | PARTIAL | Moderation actor/target bot accounts are rejected; join protections ignore bots; additional command-wide mocked tests remain |
+| Bot-to-bot safeguards | BASELINE PROTECTION TESTED; advanced parity PARTIAL | Router rejects bot-authored messages and callbacks by default; anonymous sender identities fail closed. No admin/all mode or approval-review workflow; this is intentionally safer than enabling bot commands without review |
 
 ## Group Help — publicly documented capabilities
 Verified public feature page lists join protection/CAPTCHA, anti-spam, anti-flood, anti-porn, banned words, night mode, and a free clone bot with custom name/profile image. Pricing page additionally lists moderation commands, welcome/goodbye/rules, custom commands, message deletion, automatic replies, mention notifications, and recurring messages at plan-dependent levels.
