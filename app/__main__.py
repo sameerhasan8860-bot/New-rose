@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import os
+import sys
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -12,8 +14,11 @@ from app.handlers import router
 async def main() -> None:
     settings = Settings()
     logging.basicConfig(level=getattr(logging, settings.log_level.upper(), logging.INFO))
+    os.environ["DATABASE_URL"] = settings.database_url
+    migration = await asyncio.create_subprocess_exec(sys.executable, "-m", "alembic", "upgrade", "head")
+    if await migration.wait() != 0:
+        raise RuntimeError("Database migration failed; refusing to start the bot")
     database = Database(settings.database_url)
-    await database.create_schema()
     bot = Bot(token=settings.bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
     dp["database"] = database
