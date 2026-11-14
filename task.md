@@ -37,4 +37,6 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 - [ ] Mocked Telegram API tests for moderation and reporting authorization paths
 - [ ] CAPTCHA and antiraid
 - [ ] Federations, connections, topics, privacy, cleaning, formatting, import/export, bot-to-bot safeguards
-- [ ] PostgreSQL integration, retry-safe update processing, and live test-group verification
+- [ ] PostgreSQL integration and concurrent duplicate-delivery claim/lease tests
+- [x] Failed handlers no longer permanently consume update IDs (post-success persistence; concurrent exactly-once still pending)
+- [ ] Live Telegram test-group verification
