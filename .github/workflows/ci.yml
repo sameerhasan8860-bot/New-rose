@@ -14,9 +14,24 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: masterx
+          POSTGRES_PASSWORD: masterx_test
+          POSTGRES_DB: masterx_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U masterx -d masterx_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       BOT_TOKEN: "123456:TEST_TOKEN_NOT_REAL"
       DATABASE_URL: "sqlite+aiosqlite:///./ci.db"
+      POSTGRES_TEST_URL: "postgresql+asyncpg://masterx:masterx_test@localhost:5432/masterx_test"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -26,6 +41,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Validate database migrations
+        run: alembic upgrade head
+      - name: Validate PostgreSQL migrations
+        env:
+          DATABASE_URL: postgresql+asyncpg://masterx:masterx_test@localhost:5432/masterx_test
         run: alembic upgrade head
       - name: Run tests
         run: pytest -q
