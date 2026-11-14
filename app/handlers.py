@@ -111,7 +111,7 @@ async def help_command(message: Message):
     await message.answer(
         f"{BRAND}\n𝗖𝗢𝗥𝗘 & 𝗠𝗢𝗗𝗘𝗥𝗔𝗧𝗜𝗢𝗡\n/start — Welcome\n/help — Commands\n/settings — Group settings status\n/about — About MASTER X\n/id — IDs\n/ping — Runtime response\n/status — Health\n\n"
         "Reply to a member: /ban, /kick, /mute 10m [reason], /unmute, /warn [reason], /warnings.\n"
-        "/unban accepts a replied user or numeric Telegram USER_ID. Admin rights and bot permissions are checked.\n\n/save NAME (reply) · /get NAME · /notes\n/filter keyword => response · /stop KEYWORD · /filters\n/welcome on|off · /setwelcome TEXT · /goodbye on|off\n/lock CATEGORY · /unlock CATEGORY · /locks · /blocklist add|del WORD · /antiflood on|off\n/closereport ID · /resetwarnings (reply) · /captcha on|off · /purge COUNT (reply, max 100)"
+        "/unban accepts a replied user or numeric Telegram USER_ID. Admin rights and bot permissions are checked.\n\n/save NAME (reply) · /get NAME · /notes\n/filter keyword => response · /stop KEYWORD · /filters\n/welcome on|off · /setwelcome TEXT · /goodbye on|off\n/lock CATEGORY · /unlock CATEGORY · /locks · /blocklist add|del WORD · /antiflood on|off\n/closereport ID · /resetwarnings (reply) · /captcha on|off · /antiraid on|off · /purge COUNT (reply, max 100)"
     )
 
 
