@@ -11,11 +11,11 @@ This catalogue lists handlers that exist in the current repository. Commands are
 | /id | Private/group | Returns chat and actor IDs | Everyone |
 | /ping | Private/group | Basic process response | Everyone |
 | /status | Private/group | Basic process status | Everyone |
-| /ban | Group | Ban a replied-to member | Group admin + bot ban permission |
+| /ban | Group | Ban a replied-to member | Group admin + bot ban permission |\n| /tban DURATION [reason] | Group | Temporarily ban a replied-to member; Telegram enforces the expiry | Group admin + bot ban permission |
 | /unban | Group | Unban replied user or numeric Telegram ID | Group admin + bot ban permission |
 | /kick | Group | Ban then immediately unban a replied-to member | Group admin + bot ban permission |
 | /mute | Group | Restrict a replied-to member for a duration (s/m/h/d, max 366 days) | Group admin + bot ban permission |
-| /unmute | Group | Restore configured group default permissions | Group admin + bot ban permission |
+| /tmute DURATION [reason] | Group | Temporarily restrict a replied-to member; Telegram enforces the expiry | Group admin + bot ban permission |\n| /unmute | Group | Restore configured group default permissions | Group admin + bot ban permission |
 | /warn | Group | Persist a warning for a replied-to member | Group admin |
 | /warnings | Group | Show latest 10 warnings for a replied-to member | Group admin |
 | /report | Group | Reply to a message with /report [reason]; save report and attempt to notify group admins privately | Group member |
