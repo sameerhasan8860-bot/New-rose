@@ -5,14 +5,20 @@ Status vocabulary: NOT STARTED, IN PROGRESS, IMPLEMENTED, TESTED, VERIFIED.
 ## Phase 1 — Audit and architecture
 - [x] Inspect repository metadata and tree
 - [x] Confirm repository was empty at audit time
-- [ ] Commit baseline docs and starter scaffold
-- [ ] Run CI and capture first test evidence
+- [x] Commit baseline docs and starter scaffold
+- [x] Run CI and capture first test evidence (initial failure found: pytest import path; fixed in Phase 2 CI config)
 
 ## Phase 2 — Telegram core and database
-- [ ] Persistent database abstraction and migrations
-- [ ] Idempotent update handling
-- [ ] Command registry and role/rights service
-- [ ] Multi-tenant repositories
+- [x] Async SQLAlchemy database engine and schema bootstrap
+- [x] Initial tenant-root, group settings, admin cache, processed-update, moderation and warning models
+- [x] Chat-scoped settings repository
+- [x] Duplicate update guard backed by a unique update ID
+- [x] Command registry with explicit access metadata and implemented status
+- [x] Live Telegram group-admin authorization helper
+- [ ] Alembic migration environment and first versioned migration
+- [ ] Wire database lifecycle and idempotency middleware into polling runtime
+- [ ] Wire admin authorization into privileged command handlers
+- [ ] PostgreSQL integration test and concurrency test
 
 ## Phase 3 — Rose compatibility
 - [ ] Build command catalogue from official docs
