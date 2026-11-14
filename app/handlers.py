@@ -961,3 +961,50 @@ async def manage_topic(message: Message, bot: Bot):
             await message.answer("Usage: /topic create NAME | /topic close ID | /topic reopen ID | /topic delete ID")
     except (TelegramBadRequest, TelegramForbiddenError) as exc:
         await message.answer(f"Telegram rejected the topic operation: {str(exc)[:200]}")
+
+
+@router.message(Command("export"))
+async def export_group_config(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can export this group's settings.")
+        return
+    from app.services.group_config import export_config
+    async with database.sessions() as session:
+        rows = (await session.scalars(
+            select(GroupSetting).where(GroupSetting.chat_id == message.chat.id).order_by(GroupSetting.key)
+        )).all()
+    payload = export_config(rows)
+    if len(payload) > 3900:
+        await message.answer("Configuration is too large to send as a message.")
+        return
+    await message.answer("<b>MASTER X group configuration export</b>\nCopy this JSON and reply to /import in the destination group:\n<pre>" + payload.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") + "</pre>")
+
+
+@router.message(Command("import"))
+async def import_group_config(message: Message, bot: Bot, database: Database):
+    if message.chat.type not in GROUP_TYPES or not message.from_user or not await has_group_admin_rights(bot, message.chat.id, message.from_user.id):
+        await message.answer("⛔ Only group administrators can import settings into this group.")
+        return
+    source = message.reply_to_message
+    raw = (source.text or source.caption or "") if source else ""
+    if not raw:
+        await message.answer("Reply to a MASTER X /export JSON message with /import.")
+        return
+    # Accept either a raw JSON document or the exported message's <pre> block.
+    import re
+    match = re.search(r"<pre>(.*?)</pre>", raw, flags=re.DOTALL)
+    if match:
+        raw = match.group(1).replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+    from app.services.group_config import validate_import
+    try:
+        settings = validate_import(raw)
+    except ValueError as exc:
+        await message.answer("⛔ Import rejected: " + str(exc))
+        return
+    repo = GroupRepository()
+    async with database.sessions() as session:
+        async with session.begin():
+            await repo.ensure_group(session, message.chat.id, message.chat.title or "")
+            for key, value in settings.items():
+                await repo.set_setting(session, message.chat.id, key, value)
+    await message.answer(f"✅ Imported {len(settings)} supported setting(s) into this group. Other groups were not changed.")
