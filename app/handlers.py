@@ -2,7 +2,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from aiogram import Router, Bot
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, ChatPermissions
 from aiogram.enums import ChatType, ChatMemberStatus
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from sqlalchemy import select, func
@@ -130,9 +130,9 @@ async def _apply_restriction(message: Message, bot: Bot, database: Database, act
         elif action == "unban":
             await bot.unban_chat_member(message.chat.id, target.id, only_if_banned=True)
         elif action == "mute":
-            await bot.restrict_chat_member(message.chat.id, target.id, permissions=__import__("aiogram").types.ChatPermissions(can_send_messages=False), until_date=until_date)
+            await bot.restrict_chat_member(message.chat.id, target.id, permissions=ChatPermissions(can_send_messages=False), until_date=until_date)
         elif action == "unmute":
-            await bot.restrict_chat_member(message.chat.id, target.id, permissions=__import__("aiogram").types.ChatPermissions(can_send_messages=True, can_send_audios=True, can_send_documents=True, can_send_photos=True, can_send_videos=True, can_send_video_notes=True, can_send_voice_notes=True, can_send_polls=True, can_send_other_messages=True, can_add_web_page_previews=True, can_invite_users=True))
+            await bot.restrict_chat_member(message.chat.id, target.id, permissions=ChatPermissions(can_send_messages=True, can_send_audios=True, can_send_documents=True, can_send_photos=True, can_send_videos=True, can_send_video_notes=True, can_send_voice_notes=True, can_send_polls=True, can_send_other_messages=True, can_add_web_page_previews=True, can_invite_users=True))
     except (TelegramBadRequest, TelegramForbiddenError) as exc:
         await message.answer(f"Telegram rejected the action: {str(exc)[:250]}")
         return
