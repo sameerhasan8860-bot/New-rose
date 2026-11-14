@@ -55,6 +55,7 @@ _REPORTING = (
     CommandSpec("resetwarnings", "Clear warnings for a replied-to member", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("captcha", "Enable or disable new-member CAPTCHA", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("antiraid", "Enable or disable join-spike alerts", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("topic", "Create, close, reopen, or delete forum topics", AccessLevel.GROUP_ADMIN, True),
 )
 COMMANDS = _CORE + _MODERATION + _REPORTING
 COMMAND_MAP = {item.name: item for item in COMMANDS}
