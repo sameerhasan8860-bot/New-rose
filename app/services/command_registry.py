@@ -36,6 +36,12 @@ _REPORTING = (
     CommandSpec("report", "Report a replied-to message", AccessLevel.EVERYONE, True),
     CommandSpec("reports", "Review open group reports", AccessLevel.GROUP_ADMIN, True),
     CommandSpec("adminlog", "View recent group moderation actions", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("save", "Save a replied-to message as a group note", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("get", "Retrieve a group note", AccessLevel.EVERYONE, True),
+    CommandSpec("notes", "List saved group notes", AccessLevel.EVERYONE, True),
+    CommandSpec("filter", "Create or update a keyword response", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("stop", "Remove a keyword filter", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("filters", "List group keyword filters", AccessLevel.EVERYONE, True),
 )
 COMMANDS = _CORE + _MODERATION + _REPORTING
 COMMAND_MAP = {item.name: item for item in COMMANDS}
