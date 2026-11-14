@@ -37,4 +37,4 @@ def test_command_registry_only_lists_real_core_commands():
     from app.services.command_registry import COMMAND_MAP, get_command
     assert get_command("/help").name == "help"
     assert get_command("not-a-command") is None
-    assert set(COMMAND_MAP) == {"start", "help", "settings", "about", "id", "ping", "status"}
+    assert set(COMMAND_MAP) == {"start", "help", "settings", "about", "id", "ping", "status", "ban", "unban", "kick", "mute", "unmute", "warn", "warnings"}
