@@ -1,19 +1,27 @@
 # Command Catalogue
 
-Only Phase 1 commands below are implemented in the starter. All other commands are planned, not registered, and must not be advertised as working.
+This catalogue lists handlers that exist in the current repository. Commands are still subject to live Telegram permissions and group context checks.
 
-| Command | Scope | Phase 1 behavior | Status |
+| Command | Scope | Behavior | Access |
 |---|---|---|---|
-| /start | Private/group | Branded introduction | IN PROGRESS |
-| /help | All | Lists currently available core commands | IN PROGRESS |
-| /settings | Private/group | Explains that group settings UI is upcoming | IN PROGRESS |
-| /about | All | Product identity and current stage | IN PROGRESS |
-| /id | All | Returns current chat and actor IDs | IN PROGRESS |
-| /ping | All | Basic process response | IN PROGRESS |
-| /status | All | Runtime status without secrets | IN PROGRESS |
+| /start | Private/group | Branded introduction | Everyone |
+| /help | Private/group | Lists core and moderation commands | Everyone |
+| /settings | Group | Reports current settings implementation status; changes no settings | Group admin |
+| /about | Private/group | Product identity | Everyone |
+| /id | Private/group | Returns chat and actor IDs | Everyone |
+| /ping | Private/group | Basic process response | Everyone |
+| /status | Private/group | Basic process status | Everyone |
+| /ban | Group | Ban a replied-to member | Group admin + bot ban permission |
+| /unban | Group | Unban replied user or numeric Telegram ID | Group admin + bot ban permission |
+| /kick | Group | Ban then immediately unban a replied-to member | Group admin + bot ban permission |
+| /mute | Group | Restrict a replied-to member for a duration (s/m/h/d, max 366 days) | Group admin + bot ban permission |
+| /unmute | Group | Restore configured group default permissions | Group admin + bot ban permission |
+| /warn | Group | Persist a warning for a replied-to member | Group admin |
+| /warnings | Group | Show latest 10 warnings for a replied-to member | Group admin |
+| /report | Group | Reply to a message with /report [reason]; save report and attempt to notify group admins privately | Group member |
+| /reports | Group | Show latest 10 open reports for this group | Group admin |
+| /adminlog | Group | Show latest 10 recorded moderation actions for this group | Group admin |
 
-Planned categories: ADMIN, MODERATION, ANTISPAM, WELCOME, FILTERS, NOTES, LOCKS, CAPTCHA, AUTOMATION, ANALYTICS, AI, XP, OWNER.
+Not yet implemented: welcome/goodbye, notes, custom filters, locks, blocklists, CAPTCHA, antiflood, antiraid, federations, connections, topics, privacy, cleaning, formatting, import/export, and bot-to-bot safeguards. Do not advertise these as working.
 
-Command contract for every future entry: canonical syntax, aliases, argument parser, target resolution (reply/ID/username), role requirement, required Telegram rights, persistence, success/error response, tests, and help text.
-
-Do not register a command in Telegram's command menu until its handler is available. Telegram command menus are discoverability only; authorization is always checked server-side.
+Authorization is always checked server-side. Report and admin-log queries are scoped by the current chat ID.
