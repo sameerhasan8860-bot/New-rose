@@ -7,9 +7,11 @@ def test_brand_is_present():
     assert "𝗫" in BRAND
 
 
-def test_registry_includes_only_implemented_core_and_moderation_commands():
+def test_registry_includes_only_implemented_core_moderation_and_reporting_commands():
     expected = {"start", "help", "settings", "about", "id", "ping", "status",
-                "ban", "unban", "kick", "mute", "unmute", "warn", "warnings"}
+                "ban", "unban", "kick", "mute", "unmute", "warn", "warnings",
+                "report", "reports", "adminlog"}
     assert set(COMMAND_MAP) == expected
     assert get_command("/ban").implemented is True
+    assert get_command("/report").implemented is True
     assert get_command("not-a-command") is None
