@@ -27,15 +27,17 @@ _CORE = (
     CommandSpec("status", "Show basic runtime status"),
 )
 _MODERATION = tuple(CommandSpec(name, description, AccessLevel.GROUP_ADMIN, True) for name, description in (
-    ("ban", "Ban a replied-to member"),
-    ("unban", "Unban a replied-to member"),
-    ("kick", "Remove a replied-to member"),
-    ("mute", "Temporarily restrict a replied-to member"),
-    ("unmute", "Restore send permissions"),
-    ("warn", "Record a warning for a replied-to member"),
+    ("ban", "Ban a replied-to member"), ("unban", "Unban a replied-to member"),
+    ("kick", "Remove a replied-to member"), ("mute", "Temporarily restrict a replied-to member"),
+    ("unmute", "Restore send permissions"), ("warn", "Record a warning"),
     ("warnings", "Show warnings for a replied-to member"),
 ))
-COMMANDS = _CORE + _MODERATION
+_REPORTING = (
+    CommandSpec("report", "Report a replied-to message", AccessLevel.EVERYONE, True),
+    CommandSpec("reports", "Review open group reports", AccessLevel.GROUP_ADMIN, True),
+    CommandSpec("adminlog", "View recent group moderation actions", AccessLevel.GROUP_ADMIN, True),
+)
+COMMANDS = _CORE + _MODERATION + _REPORTING
 COMMAND_MAP = {item.name: item for item in COMMANDS}
 
 
