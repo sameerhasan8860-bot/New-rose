@@ -129,7 +129,7 @@ async def start(message: Message):
 async def help_command(message: Message):
     await message.answer(
         f"{BRAND}\n𝗖𝗢𝗥𝗘 & 𝗠𝗢𝗗𝗘𝗥𝗔𝗧𝗜𝗢𝗡\n/start — Welcome\n/help — Commands\n/settings — Group settings status\n/about — About MASTER X\n/id — IDs\n/ping — Runtime response\n/status — Health\n\n"
-        "Reply to a member: /ban, /kick, /mute 10m [reason], /unmute, /warn [reason], /warnings.\n"
+        "Reply to a member: /ban, /tban 10m [reason], /kick, /mute 10m [reason], /tmute 10m [reason], /unmute, /warn [reason], /warnings.\n"
         "/unban accepts a replied user or numeric Telegram USER_ID. Admin rights and bot permissions are checked.\n\n/save NAME (reply) · /get NAME · /notes\n/filter keyword => response · /stop KEYWORD · /filters\n/welcome on|off · /setwelcome TEXT · /goodbye on|off\n/lock CATEGORY · /unlock CATEGORY · /locks · /blocklist add|del WORD · /antiflood on|off\n/closereport ID · /resetwarnings (reply) · /captcha on|off · /antiraid on|off · /topic create|close|reopen|delete · /purge COUNT (reply, max 100)\n/export · /import (reply to a JSON export; group settings only)\n/fed create NAME · /fed join ID · /fed leave · /fed info · /fban USER_ID [reason] · /funban USER_ID · /privacy [delete]\n/clean COUNT (max 20) · /format bold|italic|code|quote TEXT"
     )
 
