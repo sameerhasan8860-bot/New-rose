@@ -17,13 +17,17 @@ class MongoRepository:
         self.db = database.database
 
     async def ensure_group(self, chat_id: int, title: str = "") -> dict[str, Any]:
+        insert_fields = {
+            "chat_id": int(chat_id), "status": "active",
+            "created_at": datetime.now(timezone.utc),
+        }
+        update: dict[str, Any] = {"$setOnInsert": insert_fields}
+        if title:
+            update["$set"] = {"title": title}
+        else:
+            insert_fields["title"] = ""
         await self.db.groups.update_one(
-            {"chat_id": int(chat_id)},
-            {"$set": {"title": title} if title else {}, "$setOnInsert": {
-                "chat_id": int(chat_id), "title": title, "status": "active",
-                "created_at": datetime.now(timezone.utc),
-            }},
-            upsert=True,
+            {"chat_id": int(chat_id)}, update, upsert=True,
         )
         return await self.db.groups.find_one({"chat_id": int(chat_id)})
 
